@@ -18,15 +18,15 @@ const MainRoutes = {
   element: <MainLayout />,
   children: [
     {
-      path: '/',
+      path: '/', // Ini untuk localhost:3000/
       element: <DashboardDefault />
     },
     {
-      path: '/dashboard/default',
+      path: 'dashboard', // MODIFIKASI: Sekarang localhost:3000/dashboard akan jalan
       element: <DashboardDefault />
     },
     {
-      path: '/sample-page',
+      path: 'sample-page', // Dibuat relatif (tanpa slash di depan lebih aman untuk nested)
       element: <SamplePage />
     },
     {

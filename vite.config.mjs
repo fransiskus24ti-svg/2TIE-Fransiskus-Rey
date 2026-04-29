@@ -4,14 +4,14 @@ import jsconfigPaths from 'vite-jsconfig-paths';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const APP_BASE_URL = `${env.VITE_APP_BASE_URL}`;
+  // Kita abaikan APP_BASE_URL dari .env agar URL jadi bersih
   const PORT = 3000;
 
   return {
     server: {
-      // this ensures that the browser opens upon server start
+      // Membuka browser otomatis saat dijalankan
       open: true,
-      // this sets a default port to 3000
+      // Mengatur port ke 3000
       port: PORT,
       host: true
     },
@@ -22,7 +22,8 @@ export default defineConfig(({ mode }) => {
     define: {
       global: 'window'
     },
-    base: APP_BASE_URL,
+    // MODIFIKASI DISINI: Kita paksa pakai '/' agar tidak panjang lagi
+    base: '/', 
     plugins: [react(), jsconfigPaths()]
   };
 });
