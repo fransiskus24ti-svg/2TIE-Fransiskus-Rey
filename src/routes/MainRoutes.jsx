@@ -1,42 +1,30 @@
 import { lazy } from 'react';
-
-// project imports
 import Loadable from 'components/Loadable';
-import MainLayout from 'layouts/MainLayout';
+import MainLayout from 'layouts/MainLayout'; // Layout yang ada Sidebarnya
 
-// pages
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard/default')));
-const SamplePage = Loadable(lazy(() => import('views/pages/SamplePage')));
-
-// utils
-const UtilsTypography = Loadable(lazy(() => import('views/components/Typography')));
-
-// ==============================|| MAIN ROUTES ||============================== //
+const InventarisPage = Loadable(lazy(() => import('views/pages/InventarisToko')));
+const TransaksiPage = Loadable(lazy(() => import('views/pages/Transaksi')));
 
 const MainRoutes = {
-  path: '/',
+  path: 'admin',
   element: <MainLayout />,
   children: [
     {
-      path: '/', // Ini untuk localhost:3000/
+      index: true,
       element: <DashboardDefault />
     },
     {
-      path: 'dashboard', // MODIFIKASI: Sekarang localhost:3000/dashboard akan jalan
+      path: 'dashboard',
       element: <DashboardDefault />
     },
     {
-      path: 'sample-page', // Dibuat relatif (tanpa slash di depan lebih aman untuk nested)
-      element: <SamplePage />
+      path: 'inventaris',
+      element: <InventarisPage /> // <--- Harus InventarisPage (sesuai const di atas)
     },
     {
-      path: 'components',
-      children: [
-        {
-          path: 'typography',
-          element: <UtilsTypography />
-        }
-      ]
+      path: 'transaksi',
+      element: <TransaksiPage /> // <--- Harus TransaksiPage (sesuai const di atas)
     }
   ]
 };
