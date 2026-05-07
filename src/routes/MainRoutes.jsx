@@ -19,6 +19,14 @@ const MainRoutes = {
       element: <DashboardDefault />
     },
     {
+      path: '/admin/pesanan',
+      element: <h1>Halaman Pesanan</h1>
+    },
+    {
+      path: '/admin/tracking',
+      element: <h1>Halaman Tracking</h1>
+    },
+    {
       path: 'inventaris',
       element: <InventarisPage /> // <--- Harus InventarisPage (sesuai const di atas)
     },

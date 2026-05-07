@@ -25,7 +25,7 @@ export default function Default() {
       {/* HEADER */}
       <Grid item xs={12}>
         <Typography variant="h3" sx={{ fontWeight: 600, mt: 1 }}>
-          Dashboard Toko Bangunan
+         
         </Typography>
       </Grid>
 
