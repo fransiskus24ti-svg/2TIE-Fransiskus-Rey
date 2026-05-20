@@ -1,34 +1,37 @@
-// assets (Tambahkan icon jika perlu)
-import NavigationOutlinedIcon from '@mui/icons-material/NavigationOutlined';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'; // Icon tambahan
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
 const dashboard = {
   id: 'dashboard',
-  title: 'Toko Bangunan',
+  title: 'TOKO BANGUNAN',
   type: 'group',
+
   children: [
     {
       id: 'default',
       title: 'Dashboard',
       type: 'item',
       url: '/admin/dashboard',
-      icon: HomeOutlinedIcon
+      icon: DashboardOutlinedIcon
     },
+
     {
       id: 'inv',
       title: 'Stok Barang',
       type: 'item',
       url: '/admin/inventaris',
-      icon: NavigationOutlinedIcon // Gunakan icon yang sudah di-import
+      icon: Inventory2OutlinedIcon
     },
+
     {
       id: 'trx',
       title: 'Catat Transaksi',
       type: 'item',
       url: '/admin/transaksi',
-      icon: PersonOutlinedIcon // Gunakan icon yang sudah di-import
+      icon: ReceiptLongOutlinedIcon
     }
   ]
 };
+
 export default dashboard;
