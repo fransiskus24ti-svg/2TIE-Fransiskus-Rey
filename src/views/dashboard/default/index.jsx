@@ -508,7 +508,7 @@ export default function DashboardPremium() {
             </Menu>
 
             <Tooltip title="Refresh Data">
-              <IconButton onClick={handleRefresh} sx={{ bgcolor: alpha('#3b82f6', 0.1) }}>
+              <IconButton onClick={handleRefresh} sx={{ bgcolor: alpha('#3b82f6', 0.) }}>
                 <RefreshIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
             </Tooltip>
@@ -550,7 +550,7 @@ export default function DashboardPremium() {
       />
 
       {/* Stat Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 4 }}>
+      <Grid container spacing={3.5} sx={{ mb: 4 }}>
         {reportTokoData.map((data, index) => (
           <Grid key={index} item xs={12} sm={6} md={3}>
             <StatCard {...data} loading={loading} />
