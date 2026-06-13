@@ -1,19 +1,17 @@
-// Menggunakan ikon bawaan asli template kamu yang terbukti aman
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+﻿import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined';
+import RestoreOutlinedIcon from '@mui/icons-material/RestoreOutlined';
 
-// Di template Materially, objek utamanya harus berupa GROUP tunggal langsung agar tidak kosong!
 const dashboard = {
   id: 'grup-toko-bangunan',
   title: 'NAVIGASI UTAMA',
   type: 'group',
   children: [
-    // 1. DASHBOARD
     {
       id: 'default',
       title: 'Dashboard',
@@ -23,7 +21,6 @@ const dashboard = {
       breadcrumbs: false
     },
 
-    // Pembatas Visual MASTER DATA
     {
       id: 'sub-master',
       title: 'MASTER DATA',
@@ -41,11 +38,16 @@ const dashboard = {
           title: 'Data Pelanggan / Supplier',
           type: 'item',
           url: '/admin/pelanggan'
+        },
+        {
+          id: 'retur',
+          title: 'Retur Barang',
+          type: 'item',
+          url: '/admin/retur-barang'
         }
       ]
     },
 
-    // Pembatas Visual TRANSAKSI
     {
       id: 'sub-transaksi',
       title: 'TRANSAKSI',
@@ -67,7 +69,6 @@ const dashboard = {
       ]
     },
 
-    // Pembatas Visual LAPORAN
     {
       id: 'sub-laporan',
       title: 'LAPORAN',
@@ -83,7 +84,6 @@ const dashboard = {
       ]
     },
 
-    // Pembatas Visual PENGATURAN
     {
       id: 'sub-pengaturan',
       title: 'PENGATURAN',
