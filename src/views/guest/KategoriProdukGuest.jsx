@@ -208,7 +208,6 @@ export default function ProdukBangunan() {
           <Stack spacing={1.5} sx={{ mb: 5, textAlign: 'center' }}>
             <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 3, color: '#2563eb' }}>Toko Material</Typography>
             <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: -0.02, background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}>Seluruh Kebutuhan Bangunan</Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', fontSize: '1.05rem' }}>Lebih dari {allProducts.length}+ produk lengkap dari bahan utama hingga alat pertukangan. Cari dan beli langsung dengan mudah.</Typography>
           </Stack>
         </Fade>
 
