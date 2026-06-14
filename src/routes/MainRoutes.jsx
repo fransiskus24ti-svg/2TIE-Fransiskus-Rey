@@ -1,15 +1,23 @@
 ﻿import { lazy } from 'react';
 import Loadable from 'components/Loadable';
 import MainLayout from 'layouts/MainLayout';
+import KaryawanLayout from 'layouts/KaryawanLayout';
 import GuestLayout from 'layouts/GuestLayout';
 
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard/default')));
+const DashboardKaryawanPage = Loadable(lazy(() => import('views/pages/Transaksi')));
+
+const TransaksiKaryawanPage = Loadable(lazy(() => import('views/karyawan/KasirKaryawan')));
+
+
+
 const InventarisPage = Loadable(lazy(() => import('views/pages/InventarisToko')));
 const TransaksiPage = Loadable(lazy(() => import('views/pages/Transaksi')));
 const RiwayatTransaksiPage = Loadable(lazy(() => import('views/pages/RiwayatTransaksi')));
 const PelangganPage = Loadable(lazy(() => import('views/pages/Pelanggan')));
 const LaporanKeuanganPage = Loadable(lazy(() => import('views/pages/LaporanKeuangan')));
 const ManajemenUserPage = Loadable(lazy(() => import('views/pages/ManajemenUser')));
+const ManajemenKaryawanPage = Loadable(lazy(() => import('views/karyawan/ManajemenKaryawan')));
 const ReturBarangPage = Loadable(lazy(() => import('views/pages/ReturBarang')));
 
 const LoginPage = Loadable(lazy(() => import('views/pages/Login')));
@@ -48,6 +56,16 @@ const MainRoutes = {
         { path: 'laporan-keuangan', element: <LaporanKeuanganPage /> },
         { path: 'manajemen-user', element: <ManajemenUserPage /> },
         { path: 'retur-barang', element: <ReturBarangPage /> }
+      ]
+    },
+    {
+      path: 'karyawan',
+      element: <KaryawanLayout />,
+      children: [
+        { index: true, element: <DashboardKaryawanPage /> },
+        { path: 'transaksi', element: <TransaksiKaryawanPage /> },
+        { path: 'manajemen-karyawan', element: <ManajemenKaryawanPage /> },
+        { path: 'laporan-keuangan', element: <LaporanKeuanganPage /> },
       ]
     },
     {

@@ -62,7 +62,14 @@ export default function LaporanKeuangan() {
 
     const [riwayat] = useState(() => {
         const savedRiwayat = localStorage.getItem('riwayat_toko');
-        return savedRiwayat ? JSON.parse(savedRiwayat) : [];
+        if (!savedRiwayat) return [];
+        try {
+            const parsed = JSON.parse(savedRiwayat);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('Failed to parse localStorage riwayat_toko:', e);
+            return [];
+        }
     });
 
     const [filterType, setFilterType] = useState('week');
