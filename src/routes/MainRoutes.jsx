@@ -9,8 +9,10 @@ const DashboardKaryawanPage = Loadable(lazy(() => import('views/karyawan/Dashboa
 const TransaksiKaryawanPage = Loadable(lazy(() => import('views/karyawan/KasirKaryawan')));
 const LaporanBarangKaryawanPage = Loadable(lazy(() => import('views/karyawan/LaporanBarangKaryawan')));
 const LaporanKeuanganKaryawanPage = Loadable(lazy(() => import('views/karyawan/LaporanKeuanganKaryawan')));
+const PengirimanKaryawanPage = Loadable(lazy(() => import('views/karyawan/PengirimanKaryawan')));
 
 const InventarisPage = Loadable(lazy(() => import('views/pages/InventarisToko')));
+
 const TransaksiPage = Loadable(lazy(() => import('views/pages/Transaksi')));
 const RiwayatTransaksiPage = Loadable(lazy(() => import('views/pages/RiwayatTransaksi')));
 const PelangganPage = Loadable(lazy(() => import('views/pages/Pelanggan')));
@@ -66,9 +68,11 @@ const MainRoutes = {
         { path: 'manajemen-karyawan', element: <ManajemenKaryawanPage /> },
         { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawanPage /> },
         { path: 'laporan-barang', element: <LaporanBarangKaryawanPage /> },
+        { path: 'pengiriman', element: <PengirimanKaryawanPage /> },
       ],
     },
     {
+
       path: 'guest',
       element: <GuestLayout />,
       children: [

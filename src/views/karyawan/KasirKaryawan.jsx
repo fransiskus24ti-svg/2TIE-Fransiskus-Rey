@@ -5,12 +5,14 @@ import {
   TableHead, TableRow, Pagination, Popover, List, ListItem, ListItemText,
   IconButton, Tooltip, Fade, Zoom, Badge, Avatar, ToggleButton,
   ToggleButtonGroup, Drawer, IconButton as MuiIconButton, useMediaQuery,
-  Switch, FormControlLabel, InputAdornment
+  Switch, FormControlLabel, InputAdornment, RadioGroup, Radio, FormControl, FormLabel,
+  Collapse, MenuItem, Select
 } from '@mui/material';
 import {
   ShoppingCart, AddShoppingCart, AttachMoney, Remove, Add, Search, Print,
   FilterList, DeleteOutlineOutlined, Payment, PointOfSale,
-  Menu as MenuIcon, DarkMode, LightMode, GetApp, Receipt as ReceiptIcon
+  Menu as MenuIcon, DarkMode, LightMode, GetApp, Receipt as ReceiptIcon,
+  LocalShipping, Home, LocationOn, CheckCircle, Pending, Cancel, Person, Phone
 } from '@mui/icons-material';
 import { alpha, createTheme, ThemeProvider } from '@mui/material/styles';
 import {
@@ -142,6 +144,26 @@ export default function KasirKaryawan() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
+  // ── STATE UNTUK FITUR PENGANTARAN ──
+  const [deliveryOption, setDeliveryOption] = useState('pickup'); // 'pickup' atau 'delivery'
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState(15000);
+  const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState('pending'); // pending, in_transit, delivered, cancelled
+  const [showDeliveryTracker, setShowDeliveryTracker] = useState(false);
+
+  // ── STATE IDENTITAS PELANGGAN ──
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+
+  // ── ONGKIR PRESET ──
+  const deliveryFeeOptions = [
+    { value: 10000, label: 'Rp 10.000 (Dekat)' },
+    { value: 15000, label: 'Rp 15.000 (Sedang)' },
+    { value: 20000, label: 'Rp 20.000 (Jauh)' },
+    { value: 25000, label: 'Rp 25.000 (Luar Kota)' },
+  ];
+
   const categories = useMemo(() => ['Semua', ...new Set(barang.map(b => b.kategori))], [barang]);
   const filteredProducts = useMemo(() => {
     let filtered = barang;
@@ -149,8 +171,11 @@ export default function KasirKaryawan() {
     if (category !== 'Semua') filtered = filtered.filter(p => p.kategori === category);
     return filtered;
   }, [barang, search, category]);
+  
   const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.harga * i.qty, 0), [cart]);
-  const changeAmount = useMemo(() => (parseInt(cashReceived.replace(/\D/g, '')) || 0) - cartTotal, [cashReceived, cartTotal]);
+  const deliveryFeeTotal = useMemo(() => deliveryOption === 'delivery' ? deliveryFee : 0, [deliveryOption, deliveryFee]);
+  const grandTotal = useMemo(() => cartTotal + deliveryFeeTotal, [cartTotal, deliveryFeeTotal]);
+  const changeAmount = useMemo(() => (parseInt(cashReceived.replace(/\D/g, '')) || 0) - grandTotal, [cashReceived, grandTotal]);
 
   const filteredRiwayat = useMemo(() => {
     let filtered = [...riwayat];
@@ -237,33 +262,85 @@ export default function KasirKaryawan() {
 
   const handleCheckout = useCallback(() => {
     if (!cart.length) return setSnackbar({ open: true, message: 'Keranjang kosong', severity: 'warning' });
+    
+    // Validasi delivery
+    if (deliveryOption === 'delivery') {
+      if (!deliveryAddress.trim()) {
+        return setSnackbar({ open: true, message: 'Alamat pengiriman wajib diisi', severity: 'warning' });
+      }
+      if (!customerName.trim()) {
+        return setSnackbar({ open: true, message: 'Nama pelanggan wajib diisi', severity: 'warning' });
+      }
+      if (!customerPhone.trim()) {
+        return setSnackbar({ open: true, message: 'Nomor telepon wajib diisi', severity: 'warning' });
+      }
+    }
+
     if (paymentMethod === 'cash') {
       const paid = parseInt(cashReceived.replace(/\D/g, '')) || 0;
-      if (paid < cartTotal) return setSnackbar({ open: true, message: 'Uang kurang', severity: 'error' });
+      if (paid < grandTotal) return setSnackbar({ open: true, message: 'Uang kurang', severity: 'error' });
     }
+    
     for (const item of cart) {
       const product = barang.find(p => p.id === item.id);
       if (!product || product.stok < item.qty) return setSnackbar({ open: true, message: `Stok ${item.nama} tidak cukup`, severity: 'error' });
     }
+    
     const newBarang = barang.map(p => {
       const cartItem = cart.find(i => i.id === p.id);
       return cartItem ? { ...p, stok: p.stok - cartItem.qty } : p;
     });
     setBarang(newBarang);
+    
     const newTransactions = cart.map(item => ({
       id: Date.now() + item.id,
-      nama: item.nama, qty: item.qty, hargaSatuan: item.harga, total: item.harga * item.qty,
+      nama: item.nama, 
+      qty: item.qty, 
+      hargaSatuan: item.harga, 
+      total: item.harga * item.qty,
       tgl: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       tanggalLengkap: new Date().toLocaleDateString('id-ID'),
       metode: paymentMethod === 'cash' ? 'Tunai' : 'Kartu',
+      // Info pengantaran
+      deliveryOption: deliveryOption,
+      deliveryAddress: deliveryOption === 'delivery' ? deliveryAddress : null,
+      deliveryFee: deliveryOption === 'delivery' ? deliveryFee : 0,
+      deliveryStatus: deliveryOption === 'delivery' ? 'Menunggu' : null,
+      deliveryNotes: deliveryOption === 'delivery' ? deliveryNotes : null,
+      // Identitas pelanggan
+      customerName: deliveryOption === 'delivery' ? customerName : null,
+      customerPhone: deliveryOption === 'delivery' ? customerPhone : null,
+      grandTotal: grandTotal,
     }));
+    
     const newRiwayat = [...newTransactions, ...riwayat];
     setRiwayat(newRiwayat);
-    setLastTransaction({ cart: [...cart], total: cartTotal, paid: parseInt(cashReceived.replace(/\D/g, '')) || 0, change: changeAmount, method: paymentMethod });
+    
+    setLastTransaction({ 
+      cart: [...cart], 
+      total: grandTotal,
+      subtotal: cartTotal,
+      deliveryFee: deliveryFeeTotal,
+      paid: parseInt(cashReceived.replace(/\D/g, '')) || 0, 
+      change: changeAmount, 
+      method: paymentMethod,
+      deliveryOption: deliveryOption,
+      deliveryAddress: deliveryAddress,
+      deliveryStatus: 'Menunggu',
+      customerName: customerName,
+      customerPhone: customerPhone,
+    });
+    
     setCart([]);
     setCashReceived('');
-    setSnackbar({ open: true, message: 'Transaksi berhasil!', severity: 'success' });
-  }, [cart, paymentMethod, cashReceived, cartTotal, barang, riwayat, changeAmount, setBarang, setRiwayat]);
+    setDeliveryAddress('');
+    setDeliveryNotes('');
+    setDeliveryOption('pickup');
+    setCustomerName('');
+    setCustomerPhone('');
+    
+    setSnackbar({ open: true, message: deliveryOption === 'delivery' ? '✅ Transaksi berhasil! Pesanan akan diantar.' : '✅ Transaksi berhasil!', severity: 'success' });
+  }, [cart, paymentMethod, cashReceived, grandTotal, cartTotal, deliveryFeeTotal, barang, riwayat, changeAmount, setBarang, setRiwayat, deliveryOption, deliveryAddress, deliveryFee, deliveryNotes, customerName, customerPhone]);
 
   const printLastStruk = useCallback(() => {
     if (!lastTransaction) return;
@@ -273,21 +350,52 @@ export default function KasirKaryawan() {
       <style>body{font-family:'Courier New',monospace;margin:20px} table{width:100%} th,td{border-bottom:1px dashed #ccc;padding:6px 0;text-align:left} .total{font-size:1.2rem;font-weight:bold;text-align:right}</style>
       </head><body>
       <h2>TOKO BANGUNAN</h2><p>${new Date().toLocaleString()}</p><hr/>
+      ${lastTransaction.deliveryOption === 'delivery' ? `
+        <div style="margin-bottom:8px;">
+          <strong>Pelanggan:</strong> ${lastTransaction.customerName || '-'}<br/>
+          <strong>Telepon:</strong> ${lastTransaction.customerPhone || '-'}<br/>
+          <strong>Alamat:</strong> ${lastTransaction.deliveryAddress || '-'}
+        </div>
+        <hr/>
+      ` : ''}
       <table><thead><tr><th>Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr></thead><tbody>
       ${lastTransaction.cart.map(item => `<tr><td>${item.nama}</td><td>${item.qty}</td><td>${formatRupiah(item.harga)}</td><td>${formatRupiah(item.harga * item.qty)}</td></tr>`).join('')}
       </tbody></table><hr/>
-      <div class="total">Total: ${formatRupiah(lastTransaction.total)}</div>
+      <div style="text-align:right">
+        <div>Subtotal: ${formatRupiah(lastTransaction.subtotal || lastTransaction.total - (lastTransaction.deliveryFee || 0))}</div>
+        ${lastTransaction.deliveryFee ? `<div>Ongkir: ${formatRupiah(lastTransaction.deliveryFee)}</div>` : ''}
+        <div class="total">Total: ${formatRupiah(lastTransaction.total)}</div>
+      </div>
       <div>Metode: ${lastTransaction.method === 'cash' ? 'Tunai' : 'Kartu'}</div>
       ${lastTransaction.method === 'cash' ? `<div>Tunai: ${formatRupiah(lastTransaction.paid)}</div><div>Kembali: ${formatRupiah(lastTransaction.change)}</div>` : ''}
+      ${lastTransaction.deliveryOption === 'delivery' ? `<div style="margin-top:8px;border-top:1px dashed #ccc;padding-top:8px">🚚 PENGANTARAN</div><div>Status: ${lastTransaction.deliveryStatus || 'Menunggu'}</div>` : ''}
       <hr/><p>Terima kasih!</p></body></html>
     `);
     win.document.close();
     win.print();
   }, [lastTransaction]);
 
+  // ── Fungsi update status pengantaran ──
+  const updateDeliveryStatus = (transactionId, newStatus) => {
+    setRiwayat(prev => prev.map(r => {
+      if (r.id === transactionId) {
+        return { ...r, deliveryStatus: newStatus };
+      }
+      return r;
+    }));
+    setSnackbar({ open: true, message: `Status pengantaran diubah menjadi: ${newStatus}`, severity: 'success' });
+  };
+
   const exportCSV = () => {
-    const headers = ['Tanggal', 'Jam', 'Produk', 'Qty', 'Harga Satuan', 'Total', 'Metode'];
-    const rows = riwayat.map(r => [r.tanggalLengkap, r.tgl, r.nama, r.qty, r.hargaSatuan, r.total, r.metode]);
+    const headers = ['Tanggal', 'Jam', 'Produk', 'Qty', 'Harga Satuan', 'Total', 'Metode', 'Pengantaran', 'Alamat', 'Status', 'Pelanggan', 'No Telp'];
+    const rows = riwayat.map(r => [
+      r.tanggalLengkap, r.tgl, r.nama, r.qty, r.hargaSatuan, r.total, r.metode,
+      r.deliveryOption === 'delivery' ? 'Antar' : 'Ambil Sendiri',
+      r.deliveryAddress || '-',
+      r.deliveryStatus || '-',
+      r.customerName || '-',
+      r.customerPhone || '-'
+    ]);
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a');
@@ -309,9 +417,13 @@ export default function KasirKaryawan() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // ── Count delivery orders ──
+  const deliveryCount = useMemo(() => {
+    return riwayat.filter(r => r.deliveryOption === 'delivery').length;
+  }, [riwayat]);
+
   return (
     <ThemeProvider theme={theme}>
-      {/* FULL WIDTH: tidak ada Container, Box langsung dengan padding minimal */}
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 2, px: { xs: 1, md: 2 } }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" sx={{ mb: 3 }} gap={2}>
           <Stack direction="row" alignItems="center" spacing={2}>
@@ -324,7 +436,8 @@ export default function KasirKaryawan() {
           <Stack direction="row" spacing={2}>
             <KPIItem label="Penjualan (filter)" value={formatRupiah(totalPenjualan)} color="#f59e0b" icon={AttachMoney} />
             <KPIItem label="Transaksi" value={totalTransaksi} color="#10b981" icon={ReceiptIcon} />
-            <KPIItem label="Keranjang" value={cart.length} color="#2563eb" icon={ShoppingCart} />
+            <KPIItem label="Pengantaran" value={deliveryCount} color="#2563eb" icon={LocalShipping} />
+            <KPIItem label="Keranjang" value={cart.length} color="#8b5cf6" icon={ShoppingCart} />
           </Stack>
         </Stack>
 
@@ -368,8 +481,19 @@ export default function KasirKaryawan() {
               {cart.length > 0 && (
                 <Box sx={{ p: 2.5, borderTop: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="subtitle1" fontWeight={800}>Total</Typography>
+                    <Typography variant="subtitle1" fontWeight={800}>Subtotal</Typography>
                     <Typography variant="h6" fontWeight={800} color="primary.main">{formatRupiah(cartTotal)}</Typography>
+                  </Stack>
+                  {deliveryOption === 'delivery' && (
+                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+                      <Typography variant="body2" fontWeight={600} color="text.secondary">Ongkos Kirim</Typography>
+                      <Typography variant="body2" fontWeight={700} color="#f59e0b">{formatRupiah(deliveryFee)}</Typography>
+                    </Stack>
+                  )}
+                  <Divider sx={{ my: 1.5 }} />
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="subtitle1" fontWeight={900}>Total</Typography>
+                    <Typography variant="h6" fontWeight={900} color="primary.main">{formatRupiah(grandTotal)}</Typography>
                   </Stack>
                 </Box>
               )}
@@ -384,9 +508,102 @@ export default function KasirKaryawan() {
                 <ToggleButton value="card">💳 Kartu</ToggleButton>
               </ToggleButtonGroup>
 
+              {/* ─── OPSI PENGANTARAN ─── */}
+              <Divider sx={{ my: 2 }} />
+              <Typography fontWeight={800} mb={1.5}>Opsi Pengantaran</Typography>
+              
+              <RadioGroup value={deliveryOption} onChange={(e) => setDeliveryOption(e.target.value)} sx={{ mb: 2 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <FormControlLabel 
+                    value="pickup" 
+                    control={<Radio />} 
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Home fontSize="small" />
+                        <Typography variant="body2" fontWeight={deliveryOption === 'pickup' ? 700 : 400}>Ambil Sendiri</Typography>
+                      </Stack>
+                    }
+                    sx={{ flex: 1 }}
+                  />
+                  <FormControlLabel 
+                    value="delivery" 
+                    control={<Radio />} 
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <LocalShipping fontSize="small" />
+                        <Typography variant="body2" fontWeight={deliveryOption === 'delivery' ? 700 : 400}>Antar</Typography>
+                      </Stack>
+                    }
+                    sx={{ flex: 1 }}
+                  />
+                </Stack>
+              </RadioGroup>
+
+              <Collapse in={deliveryOption === 'delivery'}>
+                <Stack spacing={2} sx={{ mt: 1, p: 1.5, bgcolor: alpha('#0f172a', 0.03), borderRadius: '16px' }}>
+                  {/* IDENTITAS PELANGGAN */}
+                  <TextField
+                    fullWidth
+                    label="Nama Pelanggan *"
+                    placeholder="Masukkan nama lengkap"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><Person /></InputAdornment>,
+                    }}
+                    size="small"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Nomor Telepon *"
+                    placeholder="08xxxxxxxx"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><Phone /></InputAdornment>,
+                    }}
+                    size="small"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Alamat Pengiriman *"
+                    placeholder="Jl. Contoh No. 123, Kota"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    multiline
+                    rows={2}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><LocationOn /></InputAdornment>,
+                    }}
+                    size="small"
+                  />
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>Ongkos Kirim</Typography>
+                    <Select
+                      value={deliveryFee}
+                      onChange={(e) => setDeliveryFee(e.target.value)}
+                      size="small"
+                      sx={{ flex: 1, borderRadius: '12px' }}
+                    >
+                      {deliveryFeeOptions.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </Stack>
+                  <TextField
+                    fullWidth
+                    label="Catatan Pengiriman (opsional)"
+                    placeholder="Contoh: Belakang rumah, dekat gerbang..."
+                    value={deliveryNotes}
+                    onChange={(e) => setDeliveryNotes(e.target.value)}
+                    size="small"
+                  />
+                </Stack>
+              </Collapse>
+
               {paymentMethod === 'cash' && (
                 <>
-                  <Typography fontWeight={600} mb={1}>Jumlah Tunai (Rp)</Typography>
+                  <Typography fontWeight={600} mb={1} sx={{ mt: 2 }}>Jumlah Tunai (Rp)</Typography>
                   <TextField
                     fullWidth
                     placeholder="0"
@@ -408,15 +625,26 @@ export default function KasirKaryawan() {
 
               <Button
                 fullWidth variant="contained" size="large" onClick={handleCheckout}
-                disabled={!cart.length || (paymentMethod === 'cash' && (parseInt(cashReceived) || 0) < cartTotal)}
-                startIcon={<Payment />} sx={{ borderRadius: '28px', py: 1.6, fontWeight: 800, mt: 2 }}
+                disabled={!cart.length || (paymentMethod === 'cash' && (parseInt(cashReceived) || 0) < grandTotal)}
+                startIcon={deliveryOption === 'delivery' ? <LocalShipping /> : <Payment />}
+                sx={{ borderRadius: '28px', py: 1.6, fontWeight: 800, mt: 2 }}
               >
-                Bayar Sekarang
+                {deliveryOption === 'delivery' ? 'Bayar & Antar' : 'Bayar Sekarang'}
               </Button>
 
               {lastTransaction && (
                 <Paper sx={{ mt: 2, p: 2, bgcolor: alpha('#10b981', 0.08), borderRadius: '24px', textAlign: 'center' }}>
                   <Typography fontWeight={600}>Transaksi terakhir: {formatRupiah(lastTransaction.total)}</Typography>
+                  {lastTransaction.deliveryOption === 'delivery' && (
+                    <>
+                      <Typography variant="caption" display="block" color="text.secondary">
+                        🚚 Antar ke: {lastTransaction.deliveryAddress}
+                      </Typography>
+                      <Typography variant="caption" display="block" color="text.secondary">
+                        Pelanggan: {lastTransaction.customerName} - {lastTransaction.customerPhone}
+                      </Typography>
+                    </>
+                  )}
                   <Button size="small" onClick={printLastStruk} startIcon={<Print />} sx={{ mt: 1 }}>Cetak Struk</Button>
                 </Paper>
               )}
@@ -430,17 +658,96 @@ export default function KasirKaryawan() {
                   <Tooltip title="Hapus semua"><IconButton size="small" onClick={clearRiwayat}><DeleteOutlineOutlined fontSize="small" /></IconButton></Tooltip>
                 </Stack>
               </Stack>
+
+              {/* ─── RIWAYAT DENGAN STATUS PENGANTARAN ─── */}
               <TableContainer sx={{ maxHeight: 280, mt: 1.5 }}>
                 <Table size="small" stickyHeader>
-                  <TableHead><TableRow><TableCell>Jam</TableCell><TableCell>Barang</TableCell><TableCell align="right">Total</TableCell></TableRow></TableHead>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Jam</TableCell>
+                      <TableCell>Barang</TableCell>
+                      <TableCell align="right">Total</TableCell>
+                      <TableCell align="center">Status</TableCell>
+                    </TableRow>
+                  </TableHead>
                   <TableBody>
                     {paginatedRiwayat.slice(0, 5).map(r => (
-                      <TableRow key={r.id} hover><TableCell>{r.tgl}</TableCell><TableCell>{r.nama} x{r.qty}</TableCell><TableCell align="right">{formatRupiah(r.total)}</TableCell></TableRow>
+                      <TableRow key={r.id} hover>
+                        <TableCell>{r.tgl}</TableCell>
+                        <TableCell>
+                          {r.nama} x{r.qty}
+                          {r.deliveryOption === 'delivery' && (
+                            <Chip label="🚚 Antar" size="small" sx={{ ml: 0.5, fontSize: '0.55rem', height: 18 }} />
+                          )}
+                        </TableCell>
+                        <TableCell align="right">{formatRupiah(r.total)}</TableCell>
+                        <TableCell align="center">
+                          {r.deliveryOption === 'delivery' ? (
+                            <Chip 
+                              label={r.deliveryStatus || 'Menunggu'} 
+                              size="small"
+                              color={
+                                r.deliveryStatus === 'Selesai' ? 'success' :
+                                r.deliveryStatus === 'Dalam Perjalanan' ? 'primary' :
+                                r.deliveryStatus === 'Batal' ? 'error' : 'warning'
+                              }
+                              sx={{ fontSize: '0.6rem', height: 20 }}
+                            />
+                          ) : (
+                            <Chip label="Ambil" size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20 }} />
+                          )}
+                        </TableCell>
+                      </TableRow>
                     ))}
-                    {!filteredRiwayat.length && <TableRow><TableCell colSpan={3} align="center">Belum ada transaksi</TableCell></TableRow>}
+                    {!filteredRiwayat.length && <TableRow><TableCell colSpan={4} align="center">Belum ada transaksi</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </TableContainer>
+
+              {/* ─── DAFTAR PESANAN YANG PERLU DIANTAR ─── */}
+              {deliveryCount > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography fontWeight={700} fontSize="0.85rem" sx={{ mb: 1 }}>
+                    🚚 Pesanan Perlu Diantar ({deliveryCount})
+                  </Typography>
+                  <TableContainer sx={{ maxHeight: 150 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Jam</TableCell>
+                          <TableCell>Pelanggan</TableCell>
+                          <TableCell>Alamat</TableCell>
+                          <TableCell align="center">Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {riwayat.filter(r => r.deliveryOption === 'delivery').slice(0, 3).map(r => (
+                          <TableRow key={r.id} hover>
+                            <TableCell>{r.tgl}</TableCell>
+                            <TableCell>{r.customerName || '-'}<br/><small>{r.customerPhone || '-'}</small></TableCell>
+                            <TableCell sx={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {r.deliveryAddress}
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip 
+                                label={r.deliveryStatus || 'Menunggu'} 
+                                size="small"
+                                color={
+                                  r.deliveryStatus === 'Selesai' ? 'success' :
+                                  r.deliveryStatus === 'Dalam Perjalanan' ? 'primary' :
+                                  r.deliveryStatus === 'Batal' ? 'error' : 'warning'
+                                }
+                                sx={{ fontSize: '0.55rem', height: 18 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+
               {totalPages > 1 && <Pagination count={totalPages} page={currentPage} onChange={(e, p) => setCurrentPage(p)} size="small" sx={{ mt: 1.5, justifyContent: 'center', display: 'flex' }} />}
 
               <Box sx={{ mt: 3 }}>

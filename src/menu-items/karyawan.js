@@ -1,6 +1,7 @@
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 
@@ -25,7 +26,13 @@ const karyawan = {
       url: '/karyawan/transaksi',
       icon: ReceiptLongOutlinedIcon
     },
-
+    {
+      id: 'karyawan-pengiriman',
+      title: 'Pengiriman',
+      type: 'item',
+      url: '/karyawan/pengiriman',
+      icon: LocalShippingOutlinedIcon
+    },
     {
       id: 'karyawan-master-stok',
       title: 'Manajemen Stok',
@@ -44,4 +51,3 @@ const karyawan = {
 };
 
 export default karyawan;
-

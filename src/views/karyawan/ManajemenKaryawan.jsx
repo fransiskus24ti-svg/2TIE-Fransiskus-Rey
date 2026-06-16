@@ -7,12 +7,17 @@ import {
 } from '@mui/material';
 import {
   Add, Remove, History, Inventory, TrendingUp, TrendingDown,
-  Storefront, CheckCircle, Cancel, Close, Refresh
+  Storefront, CheckCircle, Cancel, Close, Refresh, Delete
 } from '@mui/icons-material';
 
 const parseNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+};
+
+const formatRibuan = (angka) => {
+  if (angka === undefined || angka === null || isNaN(angka)) return '';
+  return new Intl.NumberFormat('id-ID').format(angka);
 };
 
 const normalizeRiwayat = (riwayat = []) =>
@@ -41,7 +46,6 @@ function useLocalStorage(key, initialValue) {
   return [stored, setValue];
 }
 
-// DATA BARANG DEFAULT (25 barang)
 const DEFAULT_BARANG = [
   { id: 1, nama: 'Semen Padang 40kg', stok: 120, harga: 62000, kategori: 'Semen' },
   { id: 2, nama: 'Semen Tiga Roda 40kg', stok: 85, harga: 65000, kategori: 'Semen' },
@@ -85,7 +89,13 @@ export default function ManajemenKaryawan() {
   const [keluarQty, setKeluarQty] = useState('');
   const [confirm, setConfirm] = useState({ open: false, kind: null, nama: '', qty: 0 });
 
-  // 🔥 TAMBAHKAN: Reset data barang jika jumlah barang kurang dari 10 (artinya data lama tidak lengkap)
+  const [tambahDialog, setTambahDialog] = useState(false);
+  const [newBarang, setNewBarang] = useState({ nama: '', kategori: '', harga: '' });
+  const [hargaDisplay, setHargaDisplay] = useState('');
+  const [isHargaFocused, setIsHargaFocused] = useState(false);
+
+  const [hapusDialog, setHapusDialog] = useState({ open: false, id: null, nama: '', qty: 0 });
+
   useEffect(() => {
     if (barang.length < 10) {
       setBarang(DEFAULT_BARANG);
@@ -93,12 +103,102 @@ export default function ManajemenKaryawan() {
     }
   }, [barang, setBarang]);
 
-  // Fungsi reset manual (opsional)
   const handleResetBarang = () => {
     if (window.confirm('Reset semua data barang ke default (25 item)? Data stok dan riwayat tidak akan hilang, hanya daftar barang yang diganti.')) {
       setBarang(DEFAULT_BARANG);
       setSnackbar({ open: true, message: 'Data barang telah direset ke 25 item', severity: 'success' });
     }
+  };
+
+  const handleTambahBarang = () => {
+    const { nama, kategori, harga } = newBarang;
+    if (!nama.trim()) {
+      setSnackbar({ open: true, message: 'Nama barang wajib diisi', severity: 'warning' });
+      return;
+    }
+    if (!kategori.trim()) {
+      setSnackbar({ open: true, message: 'Kategori wajib diisi', severity: 'warning' });
+      return;
+    }
+    const hargaNum = parseNumber(harga);
+    if (hargaNum <= 0) {
+      setSnackbar({ open: true, message: 'Harga harus lebih dari 0', severity: 'warning' });
+      return;
+    }
+    if (barang.some(b => b.nama.toLowerCase() === nama.trim().toLowerCase())) {
+      setSnackbar({ open: true, message: 'Nama barang sudah ada', severity: 'error' });
+      return;
+    }
+
+    const maxId = barang.reduce((max, b) => Math.max(max, b.id), 0);
+    const newItem = {
+      id: maxId + 1,
+      nama: nama.trim(),
+      kategori: kategori.trim(),
+      harga: hargaNum,
+      stok: 0,
+    };
+
+    setBarang(prev => [...prev, newItem]);
+    setTambahDialog(false);
+    setNewBarang({ nama: '', kategori: '', harga: '' });
+    setHargaDisplay('');
+    setSnackbar({ open: true, message: `Barang "${newItem.nama}" berhasil ditambahkan (stok 0)`, severity: 'success' });
+  };
+
+  const handleHargaChange = (e) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+    const numeric = parseInt(rawValue, 10);
+    if (rawValue === '') {
+      setNewBarang({ ...newBarang, harga: '' });
+      setHargaDisplay('');
+    } else if (!isNaN(numeric) && numeric >= 0) {
+      setNewBarang({ ...newBarang, harga: numeric });
+      setHargaDisplay(isHargaFocused ? String(numeric) : formatRibuan(numeric));
+    }
+  };
+
+  const handleHargaFocus = () => {
+    setIsHargaFocused(true);
+    if (newBarang.harga !== '' && !isNaN(newBarang.harga)) {
+      setHargaDisplay(String(newBarang.harga));
+    } else {
+      setHargaDisplay('');
+    }
+  };
+
+  const handleHargaBlur = () => {
+    setIsHargaFocused(false);
+    if (newBarang.harga !== '' && !isNaN(newBarang.harga) && newBarang.harga > 0) {
+      setHargaDisplay(formatRibuan(newBarang.harga));
+    } else if (newBarang.harga === '' || newBarang.harga === 0) {
+      setHargaDisplay('');
+    }
+  };
+
+  const handleHapusRiwayatMasuk = (id) => {
+    const item = riwayatNorm.find(r => r.id === id && r.jenis === 'masuk');
+    if (!item) return;
+    setHapusDialog({ open: true, id, nama: item.nama, qty: item.qty });
+  };
+
+  const confirmHapusRiwayat = () => {
+    const { id, qty, nama } = hapusDialog;
+    const barangItem = barang.find(b => b.nama === nama);
+    if (!barangItem) {
+      setSnackbar({ open: true, message: 'Barang tidak ditemukan, stok tidak bisa dikembalikan', severity: 'error' });
+      setHapusDialog({ open: false, id: null, nama: '', qty: 0 });
+      return;
+    }
+
+    setBarang(prev => prev.map(b =>
+      b.id === barangItem.id ? { ...b, stok: Math.max(0, parseNumber(b.stok) - qty) } : b
+    ));
+
+    setRiwayat(prev => prev.filter(r => r.id !== id));
+
+    setSnackbar({ open: true, message: `Riwayat masuk "${nama}" (${qty}) telah dihapus. Stok dikurangi.`, severity: 'info' });
+    setHapusDialog({ open: false, id: null, nama: '', qty: 0 });
   };
 
   const barangById = useMemo(() => new Map((barang || []).map(b => [b.id, b])), [barang]);
@@ -168,7 +268,7 @@ export default function ManajemenKaryawan() {
         jenis: 'masuk',
       }, ...(prev || [])]);
 
-      setSnackbar({ open: true, message: 'Barang masuk tersimpan', severity: 'success' });
+      setSnackbar({ open: true, message: `✅ ${b.nama} berhasil ditambahkan! Stok sekarang: ${b.stok + qtyVal}`, severity: 'success' });
       setMasukQty('');
     } else if (kind === 'keluar') {
       const b = barangById.get(Number(keluarBarangId));
@@ -189,7 +289,7 @@ export default function ManajemenKaryawan() {
         jenis: 'keluar',
       }, ...(prev || [])]);
 
-      setSnackbar({ open: true, message: 'Barang keluar tersimpan', severity: 'success' });
+      setSnackbar({ open: true, message: `➖ ${b.nama} berhasil dikeluarkan! Stok tersisa: ${b.stok - qtyVal}`, severity: 'success' });
       setKeluarQty('');
     }
 
@@ -245,7 +345,6 @@ export default function ManajemenKaryawan() {
         </Stack>
       </Paper>
 
-      {/* Kartu KPI (sama seperti sebelumnya) */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={3}>
           <Zoom in><Card sx={{ p: 2, borderRadius: 4, boxShadow: 2 }}>
@@ -293,7 +392,6 @@ export default function ManajemenKaryawan() {
         </Grid>
       </Grid>
 
-      {/* Main Card dengan Tabs (sama seperti sebelumnya, namun sudah menggunakan barang yang banyak) */}
       <Card sx={{ borderRadius: 5, boxShadow: 3, overflow: 'hidden' }}>
         <Box sx={{ px: 2.5, pt: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
@@ -349,7 +447,6 @@ export default function ManajemenKaryawan() {
                   </Grid>
                 </Grid>
               )}
-              {/* Tab masuk, keluar, riwayat sama seperti sebelumnya (tidak berubah) */}
               {tab === 'masuk' && (
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
@@ -357,11 +454,67 @@ export default function ManajemenKaryawan() {
                       <Typography variant="h6" fontWeight={800} gutterBottom>Form Barang Masuk</Typography>
                       <Divider sx={{ my: 1.5 }} />
                       <Stack spacing={2}>
-                        <TextField select fullWidth label="Pilih Barang" value={masukBarangId} onChange={(e) => setMasukBarangId(e.target.value)} size="small">
-                          {barang.map(b => <MenuItem key={b.id} value={b.id}>{b.nama}</MenuItem>)}
-                        </TextField>
-                        <TextField fullWidth label="Jumlah Masuk" type="number" value={masukQty} onChange={(e) => setMasukQty(e.target.value)} size="small" InputProps={{ inputProps: { min: 1 } }} />
-                        <Button variant="contained" color="success" startIcon={<Add />} fullWidth sx={{ borderRadius: 3, py: 1.2, fontWeight: 800 }} onClick={() => onOpenConfirm('masuk')}>Simpan Masuk</Button>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <TextField
+                            select
+                            fullWidth
+                            label="Pilih Barang"
+                            value={masukBarangId}
+                            onChange={(e) => setMasukBarangId(e.target.value)}
+                            size="small"
+                          >
+                            {barang.map(b => (
+                              <MenuItem key={b.id} value={b.id}>
+                                {b.nama} (Stok: {b.stok})
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <Tooltip title="Tambah barang baru">
+                            <IconButton
+                              color="primary"
+                              onClick={() => setTambahDialog(true)}
+                              sx={{
+                                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                borderRadius: 2,
+                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) },
+                              }}
+                            >
+                              <Add />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                        <TextField
+                          fullWidth
+                          label="Jumlah Masuk"
+                          type="number"
+                          value={masukQty}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || parseNumber(val) >= 0) {
+                              setMasukQty(val);
+                            }
+                          }}
+                          size="small"
+                          InputProps={{ inputProps: { min: 0 } }}
+                        />
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={<Add />}
+                          fullWidth
+                          sx={{ borderRadius: 3, py: 1.2, fontWeight: 800 }}
+                          onClick={() => onOpenConfirm('masuk')}
+                        >
+                          Simpan Masuk
+                        </Button>
+                        <Button
+                          variant="text"
+                          startIcon={<Add />}
+                          onClick={() => setTambahDialog(true)}
+                          sx={{ fontWeight: 600, color: theme.palette.primary.main }}
+                        >
+                          Tambah Barang Baru
+                        </Button>
                       </Stack>
                     </Paper>
                   </Grid>
@@ -370,12 +523,40 @@ export default function ManajemenKaryawan() {
                       <Typography variant="h6" fontWeight={800} gutterBottom>Riwayat Barang Masuk (Terbaru)</Typography>
                       <TableContainer component={Paper} sx={{ borderRadius: 3, maxHeight: 400 }}>
                         <Table size="small" stickyHeader>
-                          <TableHead><TableRow><TableCell>Tanggal</TableCell><TableCell>Jam</TableCell><TableCell>Barang</TableCell><TableCell align="right">Qty</TableCell><TableCell align="right">Total</TableCell></TableRow></TableHead>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Tanggal</TableCell>
+                              <TableCell>Jam</TableCell>
+                              <TableCell>Barang</TableCell>
+                              <TableCell align="right">Qty</TableCell>
+                              <TableCell align="right">Total</TableCell>
+                              <TableCell align="center">Aksi</TableCell>
+                            </TableRow>
+                          </TableHead>
                           <TableBody>
                             {riwayatMasuk.slice(0, 20).map(r => (
-                              <TableRow key={r.id} hover><TableCell>{r.tanggalLengkap}</TableCell><TableCell>{r.tgl}</TableCell><TableCell sx={{ fontWeight: 600 }}>{r.nama}</TableCell><TableCell align="right">{r.qty}</TableCell><TableCell align="right">{formatRupiah(r.total)}</TableCell></TableRow>
+                              <TableRow key={r.id} hover>
+                                <TableCell>{r.tanggalLengkap}</TableCell>
+                                <TableCell>{r.tgl}</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>{r.nama}</TableCell>
+                                <TableCell align="right">{r.qty}</TableCell>
+                                <TableCell align="right">{formatRupiah(r.total)}</TableCell>
+                                <TableCell align="center">
+                                  <Tooltip title="Hapus riwayat masuk ini">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleHapusRiwayatMasuk(r.id)}
+                                    >
+                                      <Delete fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </TableCell>
+                              </TableRow>
                             ))}
-                            {riwayatMasuk.length === 0 && <TableRow><TableCell colSpan={5} align="center">Belum ada riwayat masuk</TableCell></TableRow>}
+                            {riwayatMasuk.length === 0 && (
+                              <TableRow><TableCell colSpan={6} align="center">Belum ada riwayat masuk</TableCell></TableRow>
+                            )}
                           </TableBody>
                         </Table>
                       </TableContainer>
@@ -390,11 +571,44 @@ export default function ManajemenKaryawan() {
                       <Typography variant="h6" fontWeight={800} gutterBottom>Form Barang Keluar</Typography>
                       <Divider sx={{ my: 1.5 }} />
                       <Stack spacing={2}>
-                        <TextField select fullWidth label="Pilih Barang" value={keluarBarangId} onChange={(e) => setKeluarBarangId(e.target.value)} size="small">
-                          {barang.map(b => <MenuItem key={b.id} value={b.id}>{b.nama}</MenuItem>)}
+                        <TextField
+                          select
+                          fullWidth
+                          label="Pilih Barang"
+                          value={keluarBarangId}
+                          onChange={(e) => setKeluarBarangId(e.target.value)}
+                          size="small"
+                        >
+                          {barang.map(b => (
+                            <MenuItem key={b.id} value={b.id}>
+                              {b.nama} (Stok: {b.stok})
+                            </MenuItem>
+                          ))}
                         </TextField>
-                        <TextField fullWidth label="Jumlah Keluar" type="number" value={keluarQty} onChange={(e) => setKeluarQty(e.target.value)} size="small" InputProps={{ inputProps: { min: 1 } }} />
-                        <Button variant="contained" color="error" startIcon={<Remove />} fullWidth sx={{ borderRadius: 3, py: 1.2, fontWeight: 800 }} onClick={() => onOpenConfirm('keluar')}>Simpan Keluar</Button>
+                        <TextField
+                          fullWidth
+                          label="Jumlah Keluar"
+                          type="number"
+                          value={keluarQty}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || parseNumber(val) >= 0) {
+                              setKeluarQty(val);
+                            }
+                          }}
+                          size="small"
+                          InputProps={{ inputProps: { min: 0 } }}
+                        />
+                        <Button
+                          variant="contained"
+                          color="error"
+                          startIcon={<Remove />}
+                          fullWidth
+                          sx={{ borderRadius: 3, py: 1.2, fontWeight: 800 }}
+                          onClick={() => onOpenConfirm('keluar')}
+                        >
+                          Simpan Keluar
+                        </Button>
                       </Stack>
                     </Paper>
                   </Grid>
@@ -443,7 +657,66 @@ export default function ManajemenKaryawan() {
         </Box>
       </Card>
 
-      {/* Dialog Konfirmasi */}
+      {/* Dialog Tambah Barang */}
+      <Dialog open={tambahDialog} onClose={() => setTambahDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 5 } }}>
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Tambah Barang Baru</Typography>
+            <IconButton onClick={() => setTambahDialog(false)} size="small"><Close /></IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            <TextField
+              label="Nama Barang *"
+              fullWidth
+              value={newBarang.nama}
+              onChange={(e) => setNewBarang({ ...newBarang, nama: e.target.value })}
+              placeholder="Contoh: Baut 10mm"
+            />
+            <TextField
+              label="Kategori *"
+              fullWidth
+              value={newBarang.kategori}
+              onChange={(e) => setNewBarang({ ...newBarang, kategori: e.target.value })}
+              placeholder="Contoh: Alat, Material"
+            />
+            <TextField
+              label="Harga (Rp) *"
+              fullWidth
+              value={hargaDisplay}
+              onChange={handleHargaChange}
+              onFocus={handleHargaFocus}
+              onBlur={handleHargaBlur}
+              placeholder="Masukkan harga satuan"
+              InputProps={{ inputProps: { min: 0 } }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+          <Button variant="outlined" onClick={() => setTambahDialog(false)}>Batal</Button>
+          <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleTambahBarang} sx={{ borderRadius: 3, fontWeight: 700 }}>Tambahkan</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog Konfirmasi Hapus Riwayat Masuk */}
+      <Dialog open={hapusDialog.open} onClose={() => setHapusDialog({ open: false, id: null, nama: '', qty: 0 })} PaperProps={{ sx: { borderRadius: 5 } }}>
+        <DialogTitle sx={{ fontWeight: 800 }}>Hapus Riwayat Masuk</DialogTitle>
+        <DialogContent dividers>
+          <Typography>Anda yakin ingin menghapus riwayat masuk ini?</Typography>
+          <Typography sx={{ mt: 1 }}>Barang: <b>{hapusDialog.nama}</b></Typography>
+          <Typography>Jumlah: <b>{hapusDialog.qty}</b></Typography>
+          <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+            Stok barang akan dikurangi sebanyak {hapusDialog.qty}.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button variant="outlined" onClick={() => setHapusDialog({ open: false, id: null, nama: '', qty: 0 })}>Batal</Button>
+          <Button variant="contained" color="error" onClick={confirmHapusRiwayat}>Hapus</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog Konfirmasi Masuk/Keluar */}
       <Dialog open={confirm.open} onClose={() => setConfirm({ open: false, kind: null, nama: '', qty: 0 })} PaperProps={{ sx: { borderRadius: 5 } }}>
         <DialogTitle sx={{ fontWeight: 800 }}>Konfirmasi {confirm.kind === 'masuk' ? 'Barang Masuk' : 'Barang Keluar'}</DialogTitle>
         <DialogContent dividers>
