@@ -5,11 +5,10 @@ import KaryawanLayout from 'layouts/KaryawanLayout';
 import GuestLayout from 'layouts/GuestLayout';
 
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard/default')));
-const DashboardKaryawanPage = Loadable(lazy(() => import('views/pages/Transaksi')));
-
+const DashboardKaryawanPage = Loadable(lazy(() => import('views/karyawan/DashboardKaryawan')));
 const TransaksiKaryawanPage = Loadable(lazy(() => import('views/karyawan/KasirKaryawan')));
-
-
+const LaporanBarangKaryawanPage = Loadable(lazy(() => import('views/karyawan/LaporanBarangKaryawan')));
+const LaporanKeuanganKaryawanPage = Loadable(lazy(() => import('views/karyawan/LaporanKeuanganKaryawan')));
 
 const InventarisPage = Loadable(lazy(() => import('views/pages/InventarisToko')));
 const TransaksiPage = Loadable(lazy(() => import('views/pages/Transaksi')));
@@ -40,8 +39,8 @@ const MainRoutes = {
         { index: true, element: <LoginPage /> },
         { path: 'login', element: <LoginPage /> },
         { path: 'register', element: <RegisterPage /> },
-        { path: 'forgot-password', element: <ForgotPage /> }
-      ]
+        { path: 'forgot-password', element: <ForgotPage /> },
+      ],
     },
     {
       path: 'admin',
@@ -55,8 +54,8 @@ const MainRoutes = {
         { path: 'pelanggan', element: <PelangganPage /> },
         { path: 'laporan-keuangan', element: <LaporanKeuanganPage /> },
         { path: 'manajemen-user', element: <ManajemenUserPage /> },
-        { path: 'retur-barang', element: <ReturBarangPage /> }
-      ]
+        { path: 'retur-barang', element: <ReturBarangPage /> },
+      ],
     },
     {
       path: 'karyawan',
@@ -65,8 +64,9 @@ const MainRoutes = {
         { index: true, element: <DashboardKaryawanPage /> },
         { path: 'transaksi', element: <TransaksiKaryawanPage /> },
         { path: 'manajemen-karyawan', element: <ManajemenKaryawanPage /> },
-        { path: 'laporan-keuangan', element: <LaporanKeuanganPage /> },
-      ]
+        { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawanPage /> },
+        { path: 'laporan-barang', element: <LaporanBarangKaryawanPage /> },
+      ],
     },
     {
       path: 'guest',
@@ -80,10 +80,11 @@ const MainRoutes = {
         { path: 'kontak', element: <KontakGuestPage /> },
         { path: 'kategori-produk', element: <KategoriProdukGuestPage /> },
         { path: 'promo', element: <PromoGuestPage /> },
-        { path: 'retur', element: <ReturBarangGuestPage /> }
-      ]
-    }
-  ]
+        { path: 'retur', element: <ReturBarangGuestPage /> },
+      ],
+    },
+  ],
 };
 
 export default MainRoutes;
+

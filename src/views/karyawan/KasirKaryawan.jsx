@@ -167,8 +167,6 @@ export default function KasirKaryawan() {
   const totalPages = Math.ceil(filteredRiwayat.length / rowsPerPage);
   const paginatedRiwayat = filteredRiwayat.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  // ======================== BARANG MASUK/KELUAR (berdasarkan riwayat kasir) ========================
-  // Sesuai permintaan: "Barang masuk" belum ada modul retur/masuk, jadi tampilkan 0.
   const keluarPerBarang = useMemo(() => {
     const map = new Map();
     for (const r of riwayat || []) {
