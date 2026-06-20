@@ -1,7 +1,7 @@
 # TODO
 
-## Karyawan - Pengiriman Sidebar
-- [x] Tambah menu item "Pengiriman" pada `src/menu-items/karyawan.js` dengan url `/karyawan/pengiriman`.
-- [x] Buat page baru `src/views/karyawan/PengirimanKaryawan.jsx`.
-- [x] Register route baru `/karyawan/pengiriman` di `src/routes/MainRoutes.jsx`.
-
+## Login routing
+- [ ] Konfirmasi routing `/login` sudah terhubung ke tampilan `src/views/pages/Login.jsx`
+- [ ] Pastikan tombol login mengarahkan ke route yang benar: `/admin/dashboard`
+- [ ] Pastikan `createBrowserRouter(routes)` memakai `MainRoutes` sehingga route `/login` tidak tertimpa oleh route lain
+- [ ] Jalankan build/lint untuk memastikan tidak ada error

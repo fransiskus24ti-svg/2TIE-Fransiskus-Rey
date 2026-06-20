@@ -1,16 +1,26 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // routes
 import MainRoutes from './MainRoutes';
 import PagesRoutes from './PagesRoutes';
+import GuestRoutes from './GuestRoutes';
+import KaryawanRoutes from './KaryawanRoutes';
 
 // ==============================|| ROUTING RENDER ||============================== //
 
-const router = createBrowserRouter([MainRoutes, PagesRoutes], {
-  // Hindari route mismatch saat VITE_APP_BASE_URL tidak sesuai.
-  // Kalau memang deployment butuh basename, set nilai ini sesuai base path deploy.
+const router = createBrowserRouter([
+  MainRoutes,
+  PagesRoutes,
+  GuestRoutes,
+  KaryawanRoutes,
+
+  {
+    path: '/',
+    element: <Navigate to="/guest" replace />,
+  },
+], {
   basename: ''
 });
 
-
 export default router;
+

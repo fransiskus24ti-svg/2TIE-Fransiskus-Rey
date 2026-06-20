@@ -27,7 +27,7 @@ const dashboard = {
             id: 'inv',
             title: 'Stok Barang',
             type: 'item',
-            url: '/admin/inventaris'
+            url: '/admin/inventariAs'
         }, {
             id: 'retur',
             title: 'Retur Barang',
