@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Grid,
   Typography,
@@ -17,7 +17,6 @@ import {
   Button,
   IconButton,
   Paper,
-  alpha,
   useTheme,
   useMediaQuery,
   Dialog,
@@ -42,9 +41,11 @@ import {
   Menu,
   MenuItem,
   Popover,
+  Divider,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
-// Icons (hanya yang pasti tersedia di versi umum)
+// Icons
 import StorefrontTwoToneIcon from '@mui/icons-material/StorefrontTwoTone';
 import InventoryTwoToneIcon from '@mui/icons-material/InventoryTwoTone';
 import ShoppingCartTwoToneIcon from '@mui/icons-material/ShoppingCartTwoTone';
@@ -64,16 +65,21 @@ import PeopleIcon from '@mui/icons-material/People';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DateRangeIcon from '@mui/icons-material/DateRange';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PendingIcon from '@mui/icons-material/Pending';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 
 // ==================== DATA DUMMY ====================
-const salesChartData = [
-  { name: 'Sen', penjualan: 3200000, target: 4000000, transaksi: 8 },
-  { name: 'Sel', penjualan: 4100000, target: 4000000, transaksi: 12 },
-  { name: 'Rab', penjualan: 3800000, target: 4000000, transaksi: 10 },
-  { name: 'Kam', penjualan: 5200000, target: 5000000, transaksi: 15 },
-  { name: 'Jum', penjualan: 6100000, target: 5000000, transaksi: 18 },
-  { name: 'Sab', penjualan: 7800000, target: 6000000, transaksi: 22 },
-  { name: 'Min', penjualan: 4300000, target: 4000000, transaksi: 11 },
+const generateSalesData = () => [
+  { name: 'Sen', penjualan: 3200000 + Math.floor(Math.random() * 200000 - 100000), target: 4000000, transaksi: 8 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Sel', penjualan: 4100000 + Math.floor(Math.random() * 200000 - 100000), target: 4000000, transaksi: 12 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Rab', penjualan: 3800000 + Math.floor(Math.random() * 200000 - 100000), target: 4000000, transaksi: 10 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Kam', penjualan: 5200000 + Math.floor(Math.random() * 200000 - 100000), target: 5000000, transaksi: 15 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Jum', penjualan: 6100000 + Math.floor(Math.random() * 200000 - 100000), target: 5000000, transaksi: 18 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Sab', penjualan: 7800000 + Math.floor(Math.random() * 200000 - 100000), target: 6000000, transaksi: 22 + Math.floor(Math.random() * 4 - 2) },
+  { name: 'Min', penjualan: 4300000 + Math.floor(Math.random() * 200000 - 100000), target: 4000000, transaksi: 11 + Math.floor(Math.random() * 4 - 2) },
 ];
 
 const stockCategoryData = [
@@ -106,11 +112,16 @@ const notificationsData = [
   { id: 3, title: 'Tagihan Jatuh Tempo', message: 'Toko Jaya Abadi Rp 12jt', time: '3 jam lalu', read: true, type: 'info' },
 ];
 
-// ==================== KOMPONEN GRAFIK SEDERHANA ====================
+const orderStatusData = [
+  { status: 'Pending', count: 12, color: '#f59e0b', icon: <PendingIcon fontSize="small" /> },
+  { status: 'Diproses', count: 24, color: '#3b82f6', icon: <HourglassTopIcon fontSize="small" /> },
+  { status: 'Dikirim', count: 18, color: '#8b5cf6', icon: <LocalShippingIcon fontSize="small" /> },
+  { status: 'Selesai', count: 46, color: '#10b981', icon: <DoneAllIcon fontSize="small" /> },
+];
+
+// ==================== KOMPONEN ====================
 const SimpleBarChart = ({ data, title, valueKey, labelKey, color }) => {
-  const theme = useTheme();
   const maxValue = Math.max(...data.map(d => d[valueKey]));
-  
   return (
     <Box>
       <Typography variant="subtitle2" fontWeight={600} gutterBottom>{title}</Typography>
@@ -131,57 +142,45 @@ const SimpleBarChart = ({ data, title, valueKey, labelKey, color }) => {
   );
 };
 
-const SimplePieChart = ({ data, title }) => {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  let currentAngle = 0;
-  
+const OrderProgress = ({ data }) => {
+  const total = data.reduce((sum, item) => sum + item.count, 0);
   return (
     <Box>
-      <Typography variant="subtitle2" fontWeight={600} gutterBottom>{title}</Typography>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-        <Box sx={{ position: 'relative', width: 140, height: 140 }}>
-          <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-            {data.map((item, idx) => {
-              const percentage = (item.value / total) * 100;
-              const angle = (percentage / 100) * 360;
-              const startAngle = currentAngle;
-              const endAngle = currentAngle + angle;
-              currentAngle = endAngle;
-              const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
-              const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
-              const x2 = 50 + 40 * Math.cos((endAngle * Math.PI) / 180);
-              const y2 = 50 + 40 * Math.sin((endAngle * Math.PI) / 180);
-              const largeArc = angle > 180 ? 1 : 0;
-              return (
-                <path
-                  key={idx}
-                  d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                  fill={item.color}
-                  stroke="#fff"
-                  strokeWidth="1"
-                />
-              );
-            })}
-          </svg>
-        </Box>
-        <Stack spacing={0.5}>
-          {data.map((item, idx) => (
-            <Stack key={idx} direction="row" spacing={1} alignItems="center">
-              <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: 2 }} />
-              <Typography variant="caption">{item.name}: {item.value} unit</Typography>
-            </Stack>
-          ))}
-        </Stack>
+      <Typography variant="subtitle2" fontWeight={600} gutterBottom>Progres Pesanan Keseluruhan</Typography>
+      <Stack spacing={1.5}>
+        {data.map((item, idx) => {
+          const percentage = total > 0 ? (item.count / total) * 100 : 0;
+          return (
+            <Box key={idx}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  {item.icon}
+                  <Typography variant="caption" sx={{ fontWeight: 500 }}>{item.status}</Typography>
+                </Stack>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: item.color }}>
+                  {item.count} ({percentage.toFixed(1)}%)
+                </Typography>
+              </Stack>
+              <Box sx={{ height: 8, bgcolor: alpha(item.color, 0.1), borderRadius: 4, overflow: 'hidden' }}>
+                <Box sx={{ width: `${percentage}%`, height: '100%', bgcolor: item.color, borderRadius: 4, transition: 'width 0.5s ease' }} />
+              </Box>
+            </Box>
+          );
+        })}
       </Stack>
+      <Box sx={{ mt: 2, p: 1.5, bgcolor: alpha('#3b82f6', 0.04), borderRadius: 3, border: `1px solid ${alpha('#3b82f6', 0.1)}` }}>
+        <Stack direction="row" justifyContent="space-between">
+          <Typography variant="caption" fontWeight={600}>Total Pesanan</Typography>
+          <Typography variant="caption" fontWeight={700}>{total} order</Typography>
+        </Stack>
+      </Box>
     </Box>
   );
 };
 
-// ==================== KOMPONEN STAT CARD ====================
 const StatCard = ({ title, primary, secondary, trend, trendValue, icon: Icon, color, bgLight, loading }) => {
   const theme = useTheme();
   const isTrendPositive = trendValue >= 0;
-
   if (loading) {
     return (
       <Card sx={{ p: 2.5, borderRadius: '16px' }}>
@@ -189,7 +188,6 @@ const StatCard = ({ title, primary, secondary, trend, trendValue, icon: Icon, co
       </Card>
     );
   }
-
   return (
     <Zoom in timeout={300}>
       <Card sx={{ 
@@ -252,11 +250,9 @@ const StatCard = ({ title, primary, secondary, trend, trendValue, icon: Icon, co
   );
 };
 
-// ==================== NOTIFIKASI POPOVER ====================
 const NotificationPopover = ({ open, anchorEl, onClose, notifications, onMarkAsRead, onMarkAllRead }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
   const theme = useTheme();
-
   return (
     <Popover
       open={open}
@@ -315,7 +311,6 @@ const NotificationPopover = ({ open, anchorEl, onClose, notifications, onMarkAsR
   );
 };
 
-// ==================== MODAL DETAIL PRODUK ====================
 const ProductDetailModal = ({ open, onClose, product }) => {
   const theme = useTheme();
   if (!product) return null;
@@ -364,8 +359,6 @@ const ProductDetailModal = ({ open, onClose, product }) => {
 export default function DashboardPremium() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  // State
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -375,8 +368,16 @@ export default function DashboardPremium() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('week');
   const [filterAnchor, setFilterAnchor] = useState(null);
-  
-  // Data
+  const [salesData, setSalesData] = useState(generateSalesData);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setSalesData(generateSalesData);
+    }, 3000);
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
   const reportTokoData = [
     { title: 'Pendapatan', primary: 'Rp 34,2 Jt', secondary: '+Rp 4,2 Jt minggu ini', trend: '+14,2%', trendValue: 14.2, icon: StorefrontTwoToneIcon, color: '#3b82f6', bgLight: alpha('#3b82f6', 0.03) },
     { title: 'Total Stok', primary: '1.876', secondary: '+120 unit bulan ini', trend: '+6,8%', trendValue: 6.8, icon: InventoryTwoToneIcon, color: '#10b981', bgLight: alpha('#10b981', 0.03) },
@@ -419,9 +420,8 @@ export default function DashboardPremium() {
     'Meeting dengan supplier besi jam 10:00.',
   ];
 
-  // Filtered data
   const filteredSalesData = useMemo(() => {
-    if (dateFilter === 'week') return salesChartData;
+    if (dateFilter === 'week') return salesData;
     if (dateFilter === 'month') {
       return [
         { name: 'Minggu 1', penjualan: 25000000, target: 30000000, transaksi: 45 },
@@ -430,10 +430,9 @@ export default function DashboardPremium() {
         { name: 'Minggu 4', penjualan: 35000000, target: 35000000, transaksi: 65 },
       ];
     }
-    return salesChartData;
-  }, [dateFilter]);
+    return salesData;
+  }, [dateFilter, salesData]);
 
-  // Handlers
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {
@@ -467,16 +466,7 @@ export default function DashboardPremium() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <Box sx={{ 
-      width: '100%', 
-      minHeight: '100vh', 
-      pb: 4, 
-      bgcolor: '#f8fafc',
-      pt: 3, 
-      px: { xs: 2, sm: 3, md: 4 },
-    }}>
-      
-      {/* Header */}
+    <Box sx={{ width: '100%', minHeight: '100vh', pb: 4, bgcolor: '#f8fafc', pt: 3, px: { xs: 2, sm: 3, md: 4 } }}>
       <Fade in timeout={500}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 4, gap: 2 }}>
           <Box>
@@ -488,17 +478,9 @@ export default function DashboardPremium() {
               Ringkasan operasional harian • {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Typography>
           </Box>
-
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-            {/* Filter Tanggal */}
             <Tooltip title="Filter periode">
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<DateRangeIcon />}
-                onClick={(e) => setFilterAnchor(e.currentTarget)}
-                sx={{ borderRadius: '12px', textTransform: 'none' }}
-              >
+              <Button variant="outlined" size="small" startIcon={<DateRangeIcon />} onClick={(e) => setFilterAnchor(e.currentTarget)} sx={{ borderRadius: '12px', textTransform: 'none' }}>
                 {dateFilter === 'week' ? 'Minggu Ini' : dateFilter === 'month' ? 'Bulan Ini' : 'Kustom'}
               </Button>
             </Tooltip>
@@ -506,9 +488,8 @@ export default function DashboardPremium() {
               <MenuItem onClick={() => { setDateFilter('week'); setFilterAnchor(null); }}>Minggu Ini</MenuItem>
               <MenuItem onClick={() => { setDateFilter('month'); setFilterAnchor(null); }}>Bulan Ini</MenuItem>
             </Menu>
-
             <Tooltip title="Refresh Data">
-              <IconButton onClick={handleRefresh} sx={{ bgcolor: alpha('#3b82f6', 0.) }}>
+              <IconButton onClick={handleRefresh} sx={{ bgcolor: alpha('#3b82f6', 0.1) }}>
                 <RefreshIcon sx={{ fontSize: '1.2rem' }} />
               </IconButton>
             </Tooltip>
@@ -529,27 +510,13 @@ export default function DashboardPremium() {
                 </Badge>
               </IconButton>
             </Tooltip>
-            <Chip
-              icon={<FiberManualRecordIcon sx={{ fontSize: '0.55rem', animation: 'pulse 1.5s infinite', color: '#10b981 !important' }} />}
-              label="Live"
-              size="small"
-              sx={{ bgcolor: alpha('#10b981', 0.12), color: '#10b981', fontWeight: 700 }}
-            />
+            <Chip icon={<FiberManualRecordIcon sx={{ fontSize: '0.55rem', animation: 'pulse 1.5s infinite', color: '#10b981 !important' }} />} label="Live" size="small" sx={{ bgcolor: alpha('#10b981', 0.12), color: '#10b981', fontWeight: 700 }} />
           </Stack>
         </Stack>
       </Fade>
 
-      {/* Notifikasi Popover */}
-      <NotificationPopover
-        open={Boolean(notifAnchor)}
-        anchorEl={notifAnchor}
-        onClose={() => setNotifAnchor(null)}
-        notifications={notifications}
-        onMarkAsRead={handleMarkAsRead}
-        onMarkAllRead={handleMarkAllRead}
-      />
+      <NotificationPopover open={Boolean(notifAnchor)} anchorEl={notifAnchor} onClose={() => setNotifAnchor(null)} notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllRead={handleMarkAllRead} />
 
-      {/* Stat Cards */}
       <Grid container spacing={3.5} sx={{ mb: 4 }}>
         {reportTokoData.map((data, index) => (
           <Grid key={index} item xs={12} sm={6} md={3}>
@@ -558,41 +525,61 @@ export default function DashboardPremium() {
         ))}
       </Grid>
 
-      {/* Tabs Navigasi */}
       <Grow in timeout={600}>
         <Card sx={{ mb: 4, borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.05)' }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={(e, val) => setActiveTab(val)} 
-            variant={isMobile ? "scrollable" : "standard"}
-            scrollButtons="auto"
-            sx={{ 
-              borderBottom: `1px solid #e2e8f0`, 
-              px: 2,
-              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 48 }
-            }}
-          >
-            <Tab label="Ringkasan" icon={<AssessmentIcon />} iconPosition="start" />
+          <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} variant={isMobile ? "scrollable" : "standard"} scrollButtons="auto" sx={{ borderBottom: `1px solid #e2e8f0`, px: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 48 } }}>
+            <Tab label="📊 Dashboard" icon={<DashboardIcon />} iconPosition="start" />
             <Tab label="Analisis Penjualan" icon={<TrendingUpIcon />} iconPosition="start" />
             <Tab label="Manajemen Stok" icon={<InventoryTwoToneIcon />} iconPosition="start" />
             <Tab label="Pelanggan & Piutang" icon={<PeopleIcon />} iconPosition="start" />
           </Tabs>
           <Box sx={{ p: { xs: 2, md: 3 } }}>
             {activeTab === 0 && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <SimpleBarChart 
-                    data={filteredSalesData} 
-                    title="Tren Penjualan" 
-                    valueKey="penjualan" 
-                    labelKey="name" 
-                    color="#3b82f6" 
-                  />
+              <Stack spacing={3}>
+                <Paper sx={{ p: 2.5, borderRadius: '20px', border: `1px solid ${alpha('#3b82f6', 0.15)}` }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="h6" fontWeight={700}>
+                      📈 Grafik Performa Penjualan Real-Time
+                      <Chip label="Live" size="small" icon={<FiberManualRecordIcon sx={{ fontSize: '0.6rem', color: '#10b981 !important' }} />} sx={{ ml: 1, bgcolor: alpha('#10b981', 0.1), color: '#10b981', fontWeight: 600 }} />
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Update otomatis setiap 3 detik</Typography>
+                  </Stack>
+                  <SimpleBarChart data={salesData} title="Penjualan Harian (Rp)" valueKey="penjualan" labelKey="name" color="#3b82f6" />
+                </Paper>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={7}>
+                    <Paper sx={{ p: 2.5, borderRadius: '20px', height: '100%' }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" fontWeight={700}>🏆 Statistik Produk Paling Laris</Typography>
+                        <Button size="small" variant="outlined" endIcon={<VisibilityIcon />} sx={{ textTransform: 'none' }}>Lihat Semua</Button>
+                      </Stack>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableBody>
+                            {topProducts.map((prod, i) => (
+                              <TableRow key={i} hover sx={{ cursor: 'pointer' }} onClick={() => handleProductClick(prod)}>
+                                <TableCell sx={{ fontWeight: 600, py: 1.5 }}>{prod.nama}</TableCell>
+                                <TableCell align="right" sx={{ py: 1.5 }}>{prod.terjual}</TableCell>
+                                <TableCell sx={{ width: '30%', py: 1.5 }}>
+                                  <LinearProgress variant="determinate" value={prod.progress} sx={{ height: 6, borderRadius: 3, bgcolor: alpha(prod.color, 0.1), '& .MuiLinearProgress-bar': { bgcolor: prod.color, borderRadius: 3 } }} />
+                                </TableCell>
+                                <TableCell align="right" sx={{ py: 1.5 }}>
+                                  <Chip label={prod.status} size="small" sx={{ bgcolor: alpha(prod.color, 0.12), color: prod.color, fontWeight: 600 }} />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} md={5}>
+                    <Paper sx={{ p: 2.5, borderRadius: '20px', height: '100%' }}>
+                      <OrderProgress data={orderStatusData} />
+                    </Paper>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <SimplePieChart data={stockCategoryData} title="Komposisi Stok" />
-                </Grid>
-              </Grid>
+              </Stack>
             )}
             {activeTab === 1 && (
               <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '16px' }}>
@@ -643,12 +630,7 @@ export default function DashboardPremium() {
                             <TableCell align="right">{row.stok}</TableCell>
                             <TableCell align="right">{row.minimal}</TableCell>
                             <TableCell>
-                              <Chip 
-                                label={row.stok >= row.minimal ? 'Aman' : 'Kritis'} 
-                                size="small" 
-                                color={row.stok >= row.minimal ? 'success' : 'error'} 
-                                variant="outlined"
-                              />
+                              <Chip label={row.stok >= row.minimal ? 'Aman' : 'Kritis'} size="small" color={row.stok >= row.minimal ? 'success' : 'error'} variant="outlined" />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -721,53 +703,9 @@ export default function DashboardPremium() {
         </Card>
       </Grow>
 
-      {/* Bagian Bawah */}
       <Grid container spacing={3}>
         <Grid item xs={12} lg={7}>
           <Stack spacing={3}>
-            {/* Produk Terlaris */}
-            <Zoom in timeout={700}>
-              <Card sx={{ p: 2.5, borderRadius: '24px', transition: 'all 0.3s', '&:hover': { boxShadow: '0 12px 32px rgba(0,0,0,0.08)' } }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6" fontWeight={700}>Performa Produk Terlaris</Typography>
-                  <Button size="small" variant="outlined" endIcon={<VisibilityIcon />} sx={{ textTransform: 'none' }}>Lihat Semua</Button>
-                </Stack>
-                <TableContainer>
-                  <Table size="small">
-                    <TableBody>
-                      {topProducts.map((prod, i) => (
-                        <TableRow 
-                          key={i} 
-                          hover 
-                          sx={{ cursor: 'pointer' }}
-                          onClick={() => handleProductClick(prod)}
-                        >
-                          <TableCell sx={{ fontWeight: 600, py: 1.5 }}>{prod.nama}</TableCell>
-                          <TableCell align="right" sx={{ py: 1.5 }}>{prod.terjual}</TableCell>
-                          <TableCell sx={{ width: '30%', py: 1.5 }}>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={prod.progress} 
-                              sx={{ 
-                                height: 6, 
-                                borderRadius: 3, 
-                                bgcolor: alpha(prod.color, 0.1),
-                                '& .MuiLinearProgress-bar': { bgcolor: prod.color, borderRadius: 3 }
-                              }} 
-                            />
-                          </TableCell>
-                          <TableCell align="right" sx={{ py: 1.5 }}>
-                            <Chip label={prod.status} size="small" sx={{ bgcolor: alpha(prod.color, 0.12), color: prod.color, fontWeight: 600 }} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Card>
-            </Zoom>
-
-            {/* Aktivitas Penjualan */}
             <Zoom in timeout={800}>
               <Card sx={{ p: 2.5, borderRadius: '24px' }}>
                 <Typography variant="h6" fontWeight={700} mb={2}>Aktivitas Kasir & Penjualan</Typography>
@@ -800,10 +738,8 @@ export default function DashboardPremium() {
             </Zoom>
           </Stack>
         </Grid>
-
         <Grid item xs={12} lg={5}>
           <Stack spacing={3}>
-            {/* Logistik */}
             <Zoom in timeout={900}>
               <Card sx={{ p: 2.5, borderRadius: '24px' }}>
                 <Typography variant="h6" fontWeight={700} mb={2}>🚚 Logistik Pengiriman</Typography>
@@ -822,8 +758,6 @@ export default function DashboardPremium() {
                 </Stack>
               </Card>
             </Zoom>
-
-            {/* Piutang */}
             <Zoom in timeout={1000}>
               <Card sx={{ p: 2.5, borderRadius: '24px' }}>
                 <Typography variant="h6" fontWeight={700} mb={2}>💰 Tagihan Piutang</Typography>
@@ -843,8 +777,6 @@ export default function DashboardPremium() {
                 </Stack>
               </Card>
             </Zoom>
-
-            {/* Catatan Operasional */}
             <Zoom in timeout={1100}>
               <Card sx={{ p: 2.5, borderRadius: '24px', bgcolor: alpha('#3b82f6', 0.02), border: `1px solid ${alpha('#3b82f6', 0.1)}` }}>
                 <Typography variant="h6" fontWeight={700} mb={1.5}>📋 Catatan Operasional</Typography>
@@ -862,35 +794,16 @@ export default function DashboardPremium() {
         </Grid>
       </Grid>
 
-      {/* Modal Detail Produk */}
-      <ProductDetailModal 
-        open={detailModalOpen} 
-        onClose={() => setDetailModalOpen(false)} 
-        product={selectedProduct} 
-      />
-
-      {/* Snackbar */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
+      <ProductDetailModal open={detailModalOpen} onClose={() => setDetailModalOpen(false)} product={selectedProduct} />
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity={snackbar.severity} sx={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        @media print {
-          .MuiIconButton-root, .MuiChip-root, .MuiButton-root, .MuiTabs-root {
-            display: none !important;
-          }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @media print { .MuiIconButton-root, .MuiChip-root, .MuiButton-root, .MuiTabs-root { display: none !important; } }
       `}</style>
     </Box>
   );
