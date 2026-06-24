@@ -13,16 +13,17 @@ import typography from './typography';
 // ==============================|| DEFAULT THEME - MAIN ||============================== //
 
 export default function ThemeCustomization({ children }) {
+  // ✅ Ganti 'dark' menjadi 'light'
   const themePalette = useMemo(() => palette('light'), []);
 
   const themeDefault = createTheme({
-    palette: themePalette
+    palette: themePalette,
   });
 
   // create duplicate theme due to responsive typography and fontFamily
   const theme = createTheme({
     ...themeDefault,
-    typography: typography()
+    typography: typography(),
   });
 
   theme.components = componentsOverride(theme);

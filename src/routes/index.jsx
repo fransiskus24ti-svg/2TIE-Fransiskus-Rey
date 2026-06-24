@@ -8,19 +8,24 @@ import KaryawanRoutes from './KaryawanRoutes';
 
 // ==============================|| ROUTING RENDER ||============================== //
 
-const router = createBrowserRouter([
-  MainRoutes,
-  PagesRoutes,
-  GuestRoutes,
-  KaryawanRoutes,
+const router = createBrowserRouter(
+  [
+    MainRoutes,
+    PagesRoutes,
+    GuestRoutes,
+    KaryawanRoutes,
 
+    // note: MainRoutes sudah berisi route /admin
+    {
+      path: '*',
+      element: <Navigate to="/admin/dashboard" replace />,
+    },
+  ],
   {
-    path: '/',
-    element: <Navigate to="/guest" replace />,
+    basename: '',
   },
-], {
-  basename: ''
-});
+);
+
 
 export default router;
 

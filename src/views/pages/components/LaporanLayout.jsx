@@ -12,15 +12,15 @@ export default function LaporanLayout({ title, subtitle, children }) {
           py: { xs: 1.25, md: 2 },
           mb: 3,
           mx: { xs: 0, md: 0 },
-          backgroundColor: 'background.paper',
+          backgroundColor: '#0f172a',
         }}
       >
         <Stack spacing={0.5}>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: '#0f172a' }}>
+          <Typography variant="h4" sx={{ fontWeight: 900, color: '#e2e8f0', wordBreak: 'break-word' }}>
             {title}
           </Typography>
           {subtitle ? (
-            <Typography variant="body1" sx={{ color: '#64748b' }}>
+            <Typography variant="body1" sx={{ color: '#94a3b8' }}>
               {subtitle}
             </Typography>
           ) : null}

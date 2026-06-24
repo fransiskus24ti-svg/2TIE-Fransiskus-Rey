@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import {
   Box,
   Grid,
@@ -16,6 +16,11 @@ import {
   alpha,
   LinearProgress,
   Container,
+  Snackbar,
+  Alert,
+  Skeleton,
+  Tooltip,
+  Badge,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -27,9 +32,21 @@ import {
   WhatsApp as WhatsAppIcon,
   Schedule as ScheduleIcon,
   Warning as WarningIcon,
+  Refresh as RefreshIcon,
+  Receipt as ReceiptIcon,
+  Inventory as InventoryIcon,
+  People as PeopleIcon,
+  CheckCircle as CheckCircleIcon,
+  LocationOn as LocationOnIcon,
+  AttachMoney as MoneyIcon,
+  Assignment as AssignmentIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 
-// --- Styled Components (lebih rapi & konsisten) ---
+// --- Context (untuk data global) ---
+import { TokoContext } from '../../App.jsx';
+
+// --- Styled Components ---
 const GlassCard = styled(Card)(({ theme }) => ({
   borderRadius: '20px',
   backgroundColor: 'rgba(255,255,255,0.9)',
@@ -114,22 +131,39 @@ const StatBadge = styled(Box)(({ theme, color }) => ({
 // --- Main Component ---
 export default function DashboardKaryawan() {
   const theme = useTheme();
+  const { dataBarang, riwayatTransaksi, catatanOperasional } = useContext(TokoContext);
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Data dummy (sama)
-  const totalTransaksi = 142;
+  // Data dummy (sebagian bisa diambil dari context, misal riwayat transaksi)
+  const totalTransaksi = useMemo(() => riwayatTransaksi?.length || 142, [riwayatTransaksi]);
   const kenaikan = '+12%';
   const targetProgress = 60;
-  const nominalPenjualan = 'Rp 42,850,000';
+  const nominalPenjualan = useMemo(() => {
+    const total = riwayatTransaksi?.reduce((acc, item) => acc + (item.totalHarga || 0), 0) || 42850000;
+    return `Rp ${total.toLocaleString('id-ID')}`;
+  }, [riwayatTransaksi]);
   const uangAwal = 'Rp 2,000,000';
   const uangFisik = 'Rp 44,850,000';
 
-  const stokData = [
-    { name: 'Semen Tiga Roda 50kg', masuk: 5000, keluar: 3000 },
-    { name: 'Besi 10mm (12m)', masuk: 2000, keluar: 1000 },
-    { name: 'Pipa PVC 4" Rucika', masuk: 1000, keluar: 200 },
-    { name: 'Cat Tembok Dulux 5kg', masuk: 800, keluar: 400 },
-  ];
+  // Stok dari context
+  const stokData = useMemo(() => {
+    if (dataBarang && dataBarang.length > 0) {
+      return dataBarang.map(item => ({
+        name: item.nama,
+        masuk: item.stok || 0,
+        keluar: Math.floor(item.stok * 0.3), // dummy keluar
+      }));
+    }
+    return [
+      { name: 'Semen Tiga Roda 50kg', masuk: 5000, keluar: 3000 },
+      { name: 'Besi 10mm (12m)', masuk: 2000, keluar: 1000 },
+      { name: 'Pipa PVC 4" Rucika', masuk: 1000, keluar: 200 },
+      { name: 'Cat Tembok Dulux 5kg', masuk: 800, keluar: 400 },
+    ];
+  }, [dataBarang]);
 
+  // Daftar pengiriman & piutang (dummy)
   const daftarPengiriman = [
     { id: '#TRX-9221', customer: 'Bpk. Rahmat', address: 'Vila Molati', status: 'waiting' },
     { id: '#TRX-9222', customer: 'Ibu Susi', address: 'Perum Indah', status: 'waiting' },
@@ -143,6 +177,15 @@ export default function DashboardKaryawan() {
     { customer: 'Gusak', total: 'Rp 2,100,000', dueDate: '2025-07-25' },
   ];
 
+  // Handler refresh manual
+  const handleRefresh = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSnackbar({ open: true, message: 'Dashboard berhasil diperbarui', severity: 'success' });
+    }, 600);
+  };
+
   return (
     <Box
       sx={{
@@ -155,7 +198,7 @@ export default function DashboardKaryawan() {
       <Container maxWidth="xl" disableGutters>
         <Fade in timeout={500}>
           <Box>
-            {/* HEADER - lebih ringkas */}
+            {/* HEADER */}
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               justifyContent="space-between"
@@ -196,6 +239,14 @@ export default function DashboardKaryawan() {
                   sx={{ fontWeight: 600, bgcolor: alpha('#3b82f6', 0.08), color: '#3b82f6' }}
                   icon={<Box sx={{ width: 6, height: 6, bgcolor: '#10b981', borderRadius: '50%' }} />}
                 />
+                <Tooltip title="Refresh Dashboard">
+                  <IconButton
+                    onClick={handleRefresh}
+                    sx={{ bgcolor: alpha('#3b82f6', 0.06), '&:hover': { bgcolor: alpha('#3b82f6', 0.12) } }}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Stack>
             </Stack>
 
@@ -210,52 +261,60 @@ export default function DashboardKaryawan() {
                     Berikut ringkasan performa toko hari ini.
                   </Typography>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        TOTAL TRANSAKSI
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a' }}>
-                        {totalTransaksi}
-                      </Typography>
-                      <StatBadge color="#10b981">
-                        <TrendingUpIcon sx={{ fontSize: '0.8rem' }} />
-                        {kenaikan} ke Kemarin
-                      </StatBadge>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        TARGET
-                      </Typography>
-                      <Box display="flex" alignItems="center" gap={1} sx={{ mt: 0.5 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a' }}>
-                          {targetProgress}%
+                  {loading ? (
+                    <Stack spacing={1.5}>
+                      <Skeleton variant="text" width="60%" height={40} />
+                      <Skeleton variant="text" width="80%" height={30} />
+                      <Skeleton variant="rectangular" height={60} />
+                    </Stack>
+                  ) : (
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          TOTAL TRANSAKSI
                         </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={targetProgress}
-                          sx={{
-                            flex: 1,
-                            height: 6,
-                            borderRadius: 999,
-                            backgroundColor: alpha('#3b82f6', 0.08),
-                            '& .MuiLinearProgress-bar': {
-                              background: 'linear-gradient(90deg, #667eea, #764ba2)',
+                        <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                          {totalTransaksi}
+                        </Typography>
+                        <StatBadge color="#10b981">
+                          <TrendingUpIcon sx={{ fontSize: '0.8rem' }} />
+                          {kenaikan} ke Kemarin
+                        </StatBadge>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          TARGET
+                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1} sx={{ mt: 0.5 }}>
+                          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                            {targetProgress}%
+                          </Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={targetProgress}
+                            sx={{
+                              flex: 1,
+                              height: 6,
                               borderRadius: 999,
-                            },
-                          }}
-                        />
-                      </Box>
+                              backgroundColor: alpha('#3b82f6', 0.08),
+                              '& .MuiLinearProgress-bar': {
+                                background: 'linear-gradient(90deg, #667eea, #764ba2)',
+                                borderRadius: 999,
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          NOMINAL PENJUALAN
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                          {nominalPenjualan}
+                        </Typography>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        NOMINAL PENJUALAN
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
-                        {nominalPenjualan}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                  )}
                 </GlassCard>
               </Grid>
 
@@ -285,7 +344,7 @@ export default function DashboardKaryawan() {
               </Grid>
             </Grid>
 
-            {/* MAIN CONTENT - lebih rapi dengan spacing konsisten */}
+            {/* MAIN CONTENT */}
             <Grid container spacing={3}>
               {/* KIRI */}
               <Grid item xs={12} lg={7}>
@@ -301,7 +360,7 @@ export default function DashboardKaryawan() {
                           fullWidth
                           startIcon={<CartIcon />}
                           color="#3b82f6"
-                          onClick={() => {}}
+                          onClick={() => alert('Navigasi ke Transaksi')}
                         >
                           <Stack>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>Buat Transaksi</Typography>
@@ -316,7 +375,7 @@ export default function DashboardKaryawan() {
                           fullWidth
                           startIcon={<SearchIcon />}
                           color="#10b981"
-                          onClick={() => {}}
+                          onClick={() => alert('Cek Stok')}
                         >
                           <Stack>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>Cek Stok & Harga</Typography>
@@ -331,7 +390,7 @@ export default function DashboardKaryawan() {
                           fullWidth
                           startIcon={<MapIcon />}
                           color="#f59e0b"
-                          onClick={() => {}}
+                          onClick={() => alert('Status Kirim')}
                         >
                           <Stack>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>Cek Status Kirim</Typography>
@@ -367,7 +426,7 @@ export default function DashboardKaryawan() {
                         <Typography variant="caption" fontWeight={600} color="text.secondary">Keluar</Typography>
                       </Grid>
                     </Grid>
-                    {stokData.map((item, idx) => (
+                    {stokData.slice(0, 6).map((item, idx) => (
                       <StokItem key={idx}>
                         <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>{item.name}</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#10b981', minWidth: 50, textAlign: 'right' }}>
@@ -378,6 +437,11 @@ export default function DashboardKaryawan() {
                         </Typography>
                       </StokItem>
                     ))}
+                    {stokData.length > 6 && (
+                      <Box sx={{ mt: 1, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">+ {stokData.length - 6} item lainnya</Typography>
+                      </Box>
+                    )}
                   </GlassCard>
 
                   {/* Status Pengiriman */}
@@ -470,6 +534,7 @@ export default function DashboardKaryawan() {
                             color="success"
                             size="small"
                             sx={{ bgcolor: alpha('#25D366', 0.08), '&:hover': { bgcolor: alpha('#25D366', 0.16) } }}
+                            onClick={() => alert(`WhatsApp ke ${item.customer}`)}
                           >
                             <WhatsAppIcon fontSize="small" />
                           </IconButton>
@@ -501,6 +566,24 @@ export default function DashboardKaryawan() {
                         <Typography variant="body2" color="text.secondary">Total piutang</Typography>
                         <Typography variant="body2" fontWeight={700} color="#ef4444">Rp 17,840,000</Typography>
                       </Stack>
+                      {/* Catatan Operasional dari Context */}
+                      {catatanOperasional && catatanOperasional.length > 0 && (
+                        <>
+                          <Divider />
+                          <Box>
+                            <Typography variant="caption" fontWeight={600} color="text.secondary">
+                              📋 Catatan Operasional
+                            </Typography>
+                            <Box sx={{ mt: 1 }}>
+                              {catatanOperasional.slice(0, 3).map((note, idx) => (
+                                <Typography key={idx} variant="caption" sx={{ color: 'text.secondary', display: 'block', py: 0.3 }}>
+                                  • {note}
+                                </Typography>
+                              ))}
+                            </Box>
+                          </Box>
+                        </>
+                      )}
                     </Stack>
                   </GlassCard>
                 </Stack>
@@ -508,6 +591,17 @@ export default function DashboardKaryawan() {
             </Grid>
           </Box>
         </Fade>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert severity={snackbar.severity} sx={{ borderRadius: '12px' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );

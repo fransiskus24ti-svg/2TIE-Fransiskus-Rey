@@ -1,53 +1,18 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  Grid,
-  Typography,
-  Box,
-  Stack,
-  Card,
-  Avatar,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  LinearProgress,
-  Button,
-  IconButton,
-  Paper,
-  useTheme,
-  useMediaQuery,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Badge,
-  Tooltip,
-  Fade,
-  Grow,
-  Zoom,
-  Snackbar,
-  Alert,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar as MuiAvatar,
-  Skeleton,
-  Menu,
-  MenuItem,
-  Popover,
-  Divider,
-  Collapse,
-  ListItemIcon,
-} from '@mui/material';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 
-// Icons
+// ====== MATERIAL UI IMPORTS ======
+import {
+  Grid, Typography, Box, Stack, Card, Avatar, Chip,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  LinearProgress, Button, IconButton, Paper, useTheme, useMediaQuery,
+  Dialog, DialogTitle, DialogContent, DialogActions, Badge, Tooltip,
+  Fade, Grow, Zoom, Snackbar, Alert, Tabs, Tab, List, ListItem,
+  ListItemText, ListItemAvatar, Avatar as MuiAvatar, Skeleton,
+  Menu, MenuItem, Popover, Divider, Collapse, ListItemIcon,
+} from '@mui/material';
+
+// ====== ICONS ======
 import StorefrontTwoToneIcon from '@mui/icons-material/StorefrontTwoTone';
 import InventoryTwoToneIcon from '@mui/icons-material/InventoryTwoTone';
 import ShoppingCartTwoToneIcon from '@mui/icons-material/ShoppingCartTwoTone';
@@ -63,7 +28,6 @@ import PrintIcon from '@mui/icons-material/Print';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleIcon from '@mui/icons-material/People';
-import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -71,18 +35,21 @@ import PendingIcon from '@mui/icons-material/Pending';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
-import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import FolderIcon from '@mui/icons-material/Folder';
-import SettingsIcon from '@mui/icons-material/Settings';
-import HelpIcon from '@mui/icons-material/Help';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
+// ====== COMPONENTS ======
 import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import ProfileMenu from '../components/ProfileMenu.jsx';
 import Login from '../views/pages/Login.jsx';
 
-// ====== ADMIN PAGES (REAL COMPONENTS) ======
+// ====== ADMIN PAGES ======
 import InventarisToko from '../views/pages/InventarisToko.jsx';
 import ReturBarangAdmin from '../views/pages/ReturBarang.jsx';
 import Transaksi from '../views/pages/Transaksi.jsx';
@@ -96,6 +63,14 @@ import LaporanPenjualan from '../views/pages/LaporanPenjualan.jsx';
 import LaporanInventaris from '../views/pages/LaporanInventaris.jsx';
 import PengaturanSistem from '../views/pages/PengaturanSistem.jsx';
 
+// ====== KARYAWAN PAGES ======
+import KaryawanLayout from '../layouts/KaryawanLayout/index.jsx';
+import DashboardKaryawan from '../views/karyawan/DashboardKaryawan.jsx';
+import KasirKaryawan from '../views/karyawan/KasirKaryawan.jsx';
+import PengirimanKaryawan from '../views/karyawan/PengirimanKaryawan.jsx';
+import LaporanBarangKaryawan from '../views/karyawan/LaporanBarangKaryawan.jsx';
+import LaporanKeuanganKaryawan from '../views/karyawan/LaporanKeuanganKaryawan.jsx';
+import ManajemenKaryawan from '../views/karyawan/ManajemenKaryawan.jsx';
 
 // ====== HELPER ======
 const rgba = (color, opacity) => {
@@ -105,21 +80,7 @@ const rgba = (color, opacity) => {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 };
 
-// ====== KOMPONEN HALAMAN PLACEHOLDER ======
-const PagePlaceholder = ({ title }) => (
-  <Box sx={{ p: 4, textAlign: 'center' }}>
-    <Typography variant="h4" gutterBottom>{title}</Typography>
-    <Typography variant="body1" color="text.secondary">
-      Halaman ini sedang dalam pengembangan.
-    </Typography>
-    <Typography variant="body2" color="text.disabled" sx={{ mt: 2 }}>
-      (Placeholder untuk {title})
-    </Typography>
-  </Box>
-);
-
-
-// ====== DASHBOARD UTAMA (PREMIUM) ======
+// ====== DASHBOARD PREMIUM ======
 export function DashboardPremium() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -136,17 +97,15 @@ export function DashboardPremium() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('week');
   const [filterAnchor, setFilterAnchor] = useState(null);
-  const [salesData, setSalesData] = useState(() => {
-    return [
-      { name: 'Sen', penjualan: 3200000, target: 4000000, transaksi: 8 },
-      { name: 'Sel', penjualan: 4100000, target: 4000000, transaksi: 12 },
-      { name: 'Rab', penjualan: 3800000, target: 4000000, transaksi: 10 },
-      { name: 'Kam', penjualan: 5200000, target: 5000000, transaksi: 15 },
-      { name: 'Jum', penjualan: 6100000, target: 5000000, transaksi: 18 },
-      { name: 'Sab', penjualan: 7800000, target: 6000000, transaksi: 22 },
-      { name: 'Min', penjualan: 4300000, target: 4000000, transaksi: 11 },
-    ];
-  });
+  const [salesData, setSalesData] = useState([
+    { name: 'Sen', penjualan: 3200000, target: 4000000, transaksi: 8 },
+    { name: 'Sel', penjualan: 4100000, target: 4000000, transaksi: 12 },
+    { name: 'Rab', penjualan: 3800000, target: 4000000, transaksi: 10 },
+    { name: 'Kam', penjualan: 5200000, target: 5000000, transaksi: 15 },
+    { name: 'Jum', penjualan: 6100000, target: 5000000, transaksi: 18 },
+    { name: 'Sab', penjualan: 7800000, target: 6000000, transaksi: 22 },
+    { name: 'Min', penjualan: 4300000, target: 4000000, transaksi: 11 },
+  ]);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -174,110 +133,13 @@ export function DashboardPremium() {
     { nama: 'Paku Beton 5cm', terjual: '85 kg', progress: 20, status: 'Kritis', color: '#ef4444' },
   ];
 
-  const armadaStatus = [
-    { id: 'Truk Engkel', supir: 'Bang Wahyu', tujuan: 'Proyek Perumahan Asri', status: 'Mengirim', eta: '30 menit' },
-    { id: 'Pick-up L300', supir: 'Bang Riki', tujuan: 'Jl. Sudirman No. 45', status: 'Mengirim', eta: '15 menit' },
-    { id: 'Truk Colt', supir: 'Bang Alik', tujuan: 'Gudang (Muat Pasir)', status: 'Standby', eta: '-' },
+  const orderStatusData = [
+    { status: 'Pending', count: 12, color: '#f59e0b', icon: <PendingIcon fontSize="small" /> },
+    { status: 'Diproses', count: 24, color: '#3b82f6', icon: <HourglassTopIcon fontSize="small" /> },
+    { status: 'Dikirim', count: 18, color: '#8b5cf6', icon: <LocalShippingIcon fontSize="small" /> },
+    { status: 'Selesai', count: 46, color: '#10b981', icon: <DoneAllIcon fontSize="small" /> },
   ];
 
-  const dataBonPiutang = [
-    { nama: 'Toko Jaya Abadi', sisa: 'Rp 12 Jt', tempo: 'Besok', statusColor: '#ef4444' },
-    { nama: 'Kontraktor Budi', sisa: 'Rp 4,5 Jt', tempo: '14 Jun 2026', statusColor: '#f59e0b' },
-    { nama: 'CV Karya Mandiri', sisa: 'Rp 7,2 Jt', tempo: '20 Jun 2026', statusColor: '#f59e0b' },
-  ];
-
-  const salesActivity = [
-    { item: 'Semen Padang', qty: '10 sak', ket: 'Pak Budi (Kontraktor)', waktu: 'Barusan', via: 'Transfer', viaColor: '#3b82f6' },
-    { item: 'Cat Avian 5 kg', qty: '2 kaleng', ket: 'Umum / Eceran', waktu: '10 mnt lalu', via: 'Tunai', viaColor: '#10b981' },
-    { item: 'Besi 8 mm', qty: '20 batang', ket: 'Toko Jaya Abadi', waktu: '09:00 WIB', via: 'Bon/Kredit', viaColor: '#f59e0b' },
-    { item: 'Paku Beton', qty: '5 kg', ket: 'Toko Bangunan Berkah', waktu: '08:30 WIB', via: 'Transfer', viaColor: '#3b82f6' },
-  ];
-
-  const operationalNotes = [
-    'Pengiriman pasir Merapi tiba jam 14:00.',
-    'Cek kembali nota supplier Semen Gresik.',
-    'Servis berkala armada pick-up hari Sabtu.',
-    'Pengecekan stok keramik putih (20 dus).',
-    'Meeting dengan supplier besi jam 10:00.',
-  ];
-
-  const filteredSalesData = useMemo(() => {
-    if (dateFilter === 'week') return salesData;
-    if (dateFilter === 'month') {
-      return [
-        { name: 'Minggu 1', penjualan: 25000000, target: 30000000, transaksi: 45 },
-        { name: 'Minggu 2', penjualan: 32000000, target: 30000000, transaksi: 58 },
-        { name: 'Minggu 3', penjualan: 28000000, target: 30000000, transaksi: 52 },
-        { name: 'Minggu 4', penjualan: 35000000, target: 35000000, transaksi: 65 },
-      ];
-    }
-    return salesData;
-  }, [dateFilter, salesData]);
-
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSnackbar({ open: true, message: 'Dashboard berhasil diperbarui', severity: 'success' });
-    }, 800);
-  };
-
-  const handleExport = () => {
-    setSnackbar({ open: true, message: 'Export CSV berhasil! File siap diunduh.', severity: 'success' });
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleMarkAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setSnackbar({ open: true, message: 'Semua notifikasi ditandai dibaca', severity: 'info' });
-  };
-
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
-    setDetailModalOpen(true);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // StatCard sederhana
-  const StatCard = ({ title, primary, secondary, trend, trendValue, icon: Icon, color, loading }) => {
-    const isTrendPositive = trendValue >= 0;
-    if (loading) {
-      return (
-        <Card sx={{ p: 2.5, borderRadius: '16px' }}>
-          <Skeleton variant="rectangular" width="100%" height={100} />
-        </Card>
-      );
-    }
-    return (
-      <Zoom in timeout={300}>
-        <Card sx={{ p: 2.5, borderRadius: '20px', border: `1px solid ${rgba(color, 0.15)}`, background: `linear-gradient(135deg, ${rgba(color, 0.06)} 0%, ${rgba(color, 0.03)} 100%)`, transition: 'all 0.3s', cursor: 'pointer', '&:hover': { transform: 'translateY(-6px)', boxShadow: `0 12px 28px ${rgba(color, 0.2)}` }, position: 'relative', overflow: 'hidden', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${color} 0%, ${rgba(color, 0.5)} 100%)` } }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.68rem' }}>{title}</Typography>
-              <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, mt: 0.5 }}>{primary}</Typography>
-            </Box>
-            <Avatar sx={{ width: 48, height: 48, background: `linear-gradient(135deg, ${color} 0%, ${rgba(color, 0.8)} 100%)`, boxShadow: `0 6px 14px ${rgba(color, 0.3)}` }}>
-              <Icon sx={{ fontSize: '1.5rem', color: '#fff' }} />
-            </Avatar>
-          </Stack>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>{secondary}</Typography>
-            <Chip icon={isTrendPositive ? <ArrowUpwardIcon sx={{ fontSize: '0.7rem !important' }} /> : <ArrowDownwardIcon sx={{ fontSize: '0.7rem !important' }} />} label={trend} size="small" sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700, bgcolor: isTrendPositive ? rgba('#10b981', 0.12) : rgba('#ef4444', 0.12), color: isTrendPositive ? '#10b981' : '#ef4444', border: 'none' }} />
-          </Stack>
-        </Card>
-      </Zoom>
-    );
-  };
-
-  // SimpleBarChart sederhana
   const SimpleBarChart = ({ data, title, valueKey, labelKey, color }) => {
     const maxValue = Math.max(...data.map(d => d[valueKey]));
     return (
@@ -334,12 +196,58 @@ export function DashboardPremium() {
     );
   };
 
-  const orderStatusData = [
-    { status: 'Pending', count: 12, color: '#f59e0b', icon: <PendingIcon fontSize="small" /> },
-    { status: 'Diproses', count: 24, color: '#3b82f6', icon: <HourglassTopIcon fontSize="small" /> },
-    { status: 'Dikirim', count: 18, color: '#8b5cf6', icon: <LocalShippingIcon fontSize="small" /> },
-    { status: 'Selesai', count: 46, color: '#10b981', icon: <DoneAllIcon fontSize="small" /> },
-  ];
+  const StatCard = ({ title, primary, secondary, trend, trendValue, icon: Icon, color, loading }) => {
+    const isTrendPositive = trendValue >= 0;
+    if (loading) {
+      return (
+        <Card sx={{ p: 2.5, borderRadius: '16px' }}>
+          <Skeleton variant="rectangular" width="100%" height={100} />
+        </Card>
+      );
+    }
+    return (
+      <Zoom in timeout={300}>
+        <Card sx={{ p: 2.5, borderRadius: '20px', border: `1px solid ${rgba(color, 0.15)}`, background: `linear-gradient(135deg, ${rgba(color, 0.06)} 0%, ${rgba(color, 0.03)} 100%)`, transition: 'all 0.3s', cursor: 'pointer', '&:hover': { transform: 'translateY(-6px)', boxShadow: `0 12px 28px ${rgba(color, 0.2)}` }, position: 'relative', overflow: 'hidden', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${color} 0%, ${rgba(color, 0.5)} 100%)` } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.68rem' }}>{title}</Typography>
+              <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, mt: 0.5 }}>{primary}</Typography>
+            </Box>
+            <Avatar sx={{ width: 48, height: 48, background: `linear-gradient(135deg, ${color} 0%, ${rgba(color, 0.8)} 100%)`, boxShadow: `0 6px 14px ${rgba(color, 0.3)}` }}>
+              <Icon sx={{ fontSize: '1.5rem', color: '#fff' }} />
+            </Avatar>
+          </Stack>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>{secondary}</Typography>
+            <Chip icon={isTrendPositive ? <ArrowUpwardIcon sx={{ fontSize: '0.7rem !important' }} /> : <ArrowDownwardIcon sx={{ fontSize: '0.7rem !important' }} />} label={trend} size="small" sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700, bgcolor: isTrendPositive ? rgba('#10b981', 0.12) : rgba('#ef4444', 0.12), color: isTrendPositive ? '#10b981' : '#ef4444', border: 'none' }} />
+          </Stack>
+        </Card>
+      </Zoom>
+    );
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSnackbar({ open: true, message: 'Dashboard berhasil diperbarui', severity: 'success' });
+    }, 800);
+  };
+
+  const handleExport = () => {
+    setSnackbar({ open: true, message: 'Export CSV berhasil! File siap diunduh.', severity: 'success' });
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setDetailModalOpen(true);
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', pb: 4, bgcolor: '#f8fafc', pt: 3, px: { xs: 2, sm: 3, md: 4 } }}>
@@ -447,7 +355,7 @@ export function DashboardPremium() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredSalesData.map(row => (
+                    {salesData.map(row => (
                       <TableRow key={row.name} hover>
                         <TableCell>{row.name}</TableCell>
                         <TableCell align="right">Rp {row.penjualan.toLocaleString('id-ID')}</TableCell>
@@ -685,24 +593,23 @@ export function DashboardPremium() {
   );
 }
 
-// ====== SIDEBAR DENGAN STRUKTUR MENU ======
+// ====== SIDEBAR ADMIN ======
 const Sidebar = () => {
   const navigate = useNavigate();
 
-  // Definisi menu sesuai dengan yang Anda berikan
   const menuItems = [
     {
       id: 'default',
       title: 'Dashboard',
       type: 'item',
       url: '/admin/dashboard',
-      icon: DashboardIcon,
+      icon: DashboardOutlinedIcon,
     },
     {
       id: 'sub-master',
       title: 'MASTER DATA',
       type: 'collapse',
-      icon: Inventory2Icon,
+      icon: FolderOpenOutlinedIcon,
       children: [
         { id: 'inv', title: 'Stok Barang', type: 'item', url: '/admin/inventaris' },
         { id: 'retur', title: 'Retur Barang', type: 'item', url: '/admin/retur-barang' },
@@ -712,7 +619,7 @@ const Sidebar = () => {
       id: 'sub-transaksi',
       title: 'TRANSAKSI',
       type: 'collapse',
-      icon: ShoppingCartTwoToneIcon,
+      icon: ReceiptOutlinedIcon,
       children: [
         { id: 'trx', title: 'Catat Transaksi', type: 'item', url: '/admin/transaksi' },
         { id: 'riwayat-transaksi', title: 'Riwayat Transaksi', type: 'item', url: '/admin/riwayat-transaksi' },
@@ -723,7 +630,7 @@ const Sidebar = () => {
       id: 'sub-laporan',
       title: 'LAPORAN',
       type: 'collapse',
-      icon: TrendingUpIcon,
+      icon: AssessmentOutlinedIcon,
       children: [
         { id: 'laporan-keuntungan', title: 'Laporan Keuntungan / Grafik', type: 'item', url: '/admin/laporan-keuntungan' },
         { id: 'laporan-laba-rugi', title: 'Laporan Laba-Rugi', type: 'item', url: '/admin/laporan-laba-rugi' },
@@ -735,7 +642,7 @@ const Sidebar = () => {
       id: 'sub-manajemen-pengguna',
       title: 'MANAJEMEN PENGGUNA',
       type: 'collapse',
-      icon: PeopleIcon,
+      icon: PeopleOutlineOutlinedIcon,
       children: [
         { id: 'data-karyawan', title: 'Data Karyawan', type: 'item', url: '/admin/data-karyawan' },
         { id: 'pelanggan', title: 'Data Pelanggan', type: 'item', url: '/admin/pelanggan' },
@@ -745,18 +652,9 @@ const Sidebar = () => {
       id: 'sub-pengaturan',
       title: 'PENGATURAN',
       type: 'collapse',
-      icon: SettingsIcon,
+      icon: SettingsOutlinedIcon,
       children: [
         { id: 'pengaturan-sistem', title: 'Pengaturan Sistem', type: 'item', url: '/admin/pengaturan-sistem' },
-      ],
-    },
-    {
-      id: 'sub-pages',
-      title: 'PAGES',
-      type: 'collapse',
-      icon: FolderIcon,
-      children: [
-        { id: 'rebuild-pages', title: 'Rebuild-Pages', type: 'item', url: '/admin/rebuild-pages' },
       ],
     },
   ];
@@ -775,10 +673,10 @@ const Sidebar = () => {
           <React.Fragment key={item.id}>
             <ListItem button onClick={() => toggleCollapse(item.id)}>
               <ListItemIcon>
-                {item.icon ? <item.icon sx={{ color: '#94a3b8' }} /> : null}
+                {item.icon ? <item.icon sx={{ color: '#64748b' }} /> : null}
               </ListItemIcon>
-              <ListItemText primary={item.title} sx={{ color: '#94a3b8' }} />
-              {isOpen ? <ExpandLessIcon sx={{ color: '#94a3b8' }} /> : <ExpandMoreIcon sx={{ color: '#94a3b8' }} />}
+              <ListItemText primary={item.title} sx={{ color: '#1e293b' }} />
+              {isOpen ? <ExpandLessIcon sx={{ color: '#64748b' }} /> : <ExpandMoreIcon sx={{ color: '#64748b' }} />}
             </ListItem>
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
@@ -789,7 +687,7 @@ const Sidebar = () => {
                     sx={{ pl: 4 }}
                     onClick={() => navigate(child.url)}
                   >
-                    <ListItemText primary={child.title} sx={{ color: '#94a3b8' }} />
+                    <ListItemText primary={child.title} sx={{ color: '#475569' }} />
                   </ListItem>
                 ))}
               </List>
@@ -803,12 +701,20 @@ const Sidebar = () => {
             button
             key={item.id}
             onClick={() => navigate(item.url)}
-            sx={{ bgcolor: isActive ? '#3b82f6' : 'transparent' }}
+            sx={{
+              bgcolor: isActive ? '#e8f0fe' : 'transparent',
+              '&:hover': { bgcolor: '#f1f5f9' },
+            }}
           >
             <ListItemIcon>
-              {item.icon ? <item.icon sx={{ color: isActive ? 'white' : '#94a3b8' }} /> : null}
+              {item.icon ? (
+                <item.icon sx={{ color: isActive ? '#1976d2' : '#64748b' }} />
+              ) : null}
             </ListItemIcon>
-            <ListItemText primary={item.title} sx={{ color: isActive ? 'white' : '#94a3b8' }} />
+            <ListItemText
+              primary={item.title}
+              sx={{ color: isActive ? '#1976d2' : '#1e293b', fontWeight: isActive ? 600 : 400 }}
+            />
           </ListItem>
         );
       } else {
@@ -821,18 +727,24 @@ const Sidebar = () => {
     <Box
       sx={{
         width: 280,
-        height: '100vh',
-        bgcolor: '#1e293b',
-        color: 'white',
+        height: 'calc(100vh - 64px)',
+        position: 'sticky',
+        top: '64px',
+        bgcolor: '#ffffff',
+        color: '#1e293b',
         p: 2,
         flexShrink: 0,
         overflowY: 'auto',
+        borderRight: '1px solid #e2e8f0',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
       }}
     >
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <span role="img" aria-label="logo">📦</span> Materially
-      </Typography>
-
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4, pl: 1 }}>
+        <StorefrontTwoToneIcon sx={{ color: '#1976d2', fontSize: 32 }} />
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1976d2' }}>
+          Materiality
+        </Typography>
+      </Box>
       <List component="nav" sx={{ '& .MuiListItem-root': { borderRadius: 2, mb: 0.5 } }}>
         {renderMenu(menuItems)}
       </List>
@@ -844,61 +756,29 @@ const Sidebar = () => {
 const AdminLayout = () => {
   return (
     <ErrorBoundary fallback={<div style={{ padding: 16 }}>Error load halaman</div>}>
-      <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default' }}>
-        {/* Header Admin */}
-        <Box
-          component="header"
-          sx={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 1200,
-            bgcolor: '#0f172a',
-            color: '#fff',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.2 }}>
-            <Stack direction="row" alignItems="center" spacing={1.25}>
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 2,
-                  bgcolor: 'rgba(59,130,246,0.18)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid rgba(59,130,246,0.35)',
-                }}
-              >
-                <Typography sx={{ fontWeight: 900, color: '#60a5fa' }}>A</Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontWeight: 900, fontSize: 14 }}>Admin Dashboard</Typography>
-                <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>Materially • Control Panel</Typography>
-              </Box>
+<Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#ffffff' }}>
+        <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#1976d2', color: '#fff', borderBottom: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography sx={{ fontWeight: 700, fontSize: 20, letterSpacing: 1 }}>Materiality</Typography>
+              <Chip label="Live" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700, '& .MuiChip-icon': { color: '#fff' } }} icon={<FiberManualRecordIcon sx={{ fontSize: 10, animation: 'pulse 1.5s infinite' }} />} />
             </Stack>
-
-            {/* Profile dropdown */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
               <ProfileMenu />
-            </Box>
+            </Stack>
           </Box>
         </Box>
-
-        {/* Content */}
         <Box sx={{ display: 'flex' }}>
           <Sidebar />
-          <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 3 }}>
-            <Outlet />
-          </Box>
+          <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 3 }}><Outlet /></Box>
         </Box>
       </Box>
     </ErrorBoundary>
   );
 };
 
-// ====== ROUTES ======
+// ====== ROUTES UTAMA (GABUNGAN ADMIN + KARYAWAN) ======
 const routes = [
   {
     path: '/login',
@@ -908,6 +788,7 @@ const routes = [
     path: '/',
     element: <Navigate to="/login" replace />,
   },
+  // ===== ROUTE ADMIN =====
   {
     path: '/admin',
     element: <AdminLayout />,
@@ -918,17 +799,29 @@ const routes = [
       { path: 'transaksi', element: <Transaksi /> },
       { path: 'riwayat-transaksi', element: <RiwayatTransaksi /> },
       { path: 'bon-piutang', element: <BonPiutangAdmin /> },
-
       { path: 'laporan-keuntungan', element: <LaporanKeuntungan /> },
       { path: 'laporan-laba-rugi', element: <LaporanLabaRugi /> },
       { path: 'laporan-penjualan', element: <LaporanPenjualan /> },
       { path: 'laporan-inventaris', element: <LaporanInventaris /> },
       { path: 'data-karyawan', element: <ManajemenUser /> },
       { path: 'pelanggan', element: <Pelanggan /> },
-{ path: 'pengaturan-sistem', element: <PengaturanSistem /> },
-
-      { path: 'rebuild-pages', element: <PagePlaceholder title="Rebuild Pages" /> },
+      { path: 'pengaturan-sistem', element: <PengaturanSistem /> },
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+    ],
+  },
+  // ===== ROUTE KARYAWAN =====
+  {
+    path: '/karyawan',
+    element: <KaryawanLayout />,
+    children: [
+      { index: true, element: <Navigate to="/karyawan/kasir" replace /> },
+      { path: 'dashboard', element: <DashboardKaryawan /> },
+      { path: 'kasir', element: <KasirKaryawan /> },
+      { path: 'pengiriman', element: <PengirimanKaryawan /> },
+      { path: 'laporan-barang', element: <LaporanBarangKaryawan /> },
+      { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawan /> },
+      { path: 'manajemen', element: <ManajemenKaryawan /> },
+      { path: '*', element: <Navigate to="/karyawan" replace /> },
     ],
   },
 ];
