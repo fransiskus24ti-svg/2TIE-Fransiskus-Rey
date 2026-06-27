@@ -1,15 +1,14 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // ====== MATERIAL UI IMPORTS ======
 import {
   Grid, Typography, Box, Stack, Card, Avatar, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   LinearProgress, Button, IconButton, Paper, useTheme, useMediaQuery,
-  Dialog, DialogTitle, DialogContent, DialogActions, Badge, Tooltip,
-  Fade, Grow, Zoom, Snackbar, Alert, Tabs, Tab, List, ListItem,
-  ListItemText, ListItemAvatar, Avatar as MuiAvatar, Skeleton,
-  Menu, MenuItem, Popover, Divider, Collapse, ListItemIcon,
+  Badge, Fade, Grow, Zoom, Snackbar, Alert, Tabs, Tab, List, ListItem,
+  ListItemText, Avatar as MuiAvatar, Skeleton,
+  Menu, MenuItem, Collapse, ListItemIcon,
 } from '@mui/material';
 
 // ====== ICONS ======
@@ -45,7 +44,6 @@ import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 // ====== COMPONENTS ======
-import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import ProfileMenu from '../components/ProfileMenu.jsx';
 import Login from '../views/pages/Login.jsx';
 
@@ -63,14 +61,19 @@ import LaporanPenjualan from '../views/pages/LaporanPenjualan.jsx';
 import LaporanInventaris from '../views/pages/LaporanInventaris.jsx';
 import PengaturanSistem from '../views/pages/PengaturanSistem.jsx';
 
+// 👇 IMPORT USER MANAGEMENT
+import UserManagement from '../views/pages/UserManagement.jsx';
+
 // ====== KARYAWAN PAGES ======
-import KaryawanLayout from '../layouts/KaryawanLayout/index.jsx';
 import DashboardKaryawan from '../views/karyawan/DashboardKaryawan.jsx';
 import KasirKaryawan from '../views/karyawan/KasirKaryawan.jsx';
 import PengirimanKaryawan from '../views/karyawan/PengirimanKaryawan.jsx';
 import LaporanBarangKaryawan from '../views/karyawan/LaporanBarangKaryawan.jsx';
 import LaporanKeuanganKaryawan from '../views/karyawan/LaporanKeuanganKaryawan.jsx';
+import LaporanLabaRugiKaryawan from '../views/karyawan/LaporanLabaRugiKaryawan.jsx';
+import ReturBarangKaryawan from '../views/karyawan/ReturBarangKaryawan.jsx';
 import ManajemenKaryawan from '../views/karyawan/ManajemenKaryawan.jsx';
+import ManajemenPiutangKaryawan from '../views/karyawan/ManajemenPiutangKaryawan.jsx';
 
 // ====== HELPER ======
 const rgba = (color, opacity) => {
@@ -80,21 +83,23 @@ const rgba = (color, opacity) => {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 };
 
-// ====== DASHBOARD PREMIUM ======
+// ============================================================
+// ====== DASHBOARD PREMIUM (Admin Dashboard) ======
+// ============================================================
 export function DashboardPremium() {
+
+  console.log('✅ DashboardPremium rendered');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [notifAnchor, setNotifAnchor] = useState(null);
-  const [notifications, setNotifications] = useState([
+  const [notifications] = useState([
     { id: 1, title: 'Stok Semen Menipis', message: 'Stok Semen Tiga Roda tersisa 10 sak', time: '5 menit lalu', read: false, type: 'warning' },
     { id: 2, title: 'Pengiriman Berhasil', message: 'Truk Engkel sampai di tujuan', time: '1 jam lalu', read: false, type: 'success' },
     { id: 3, title: 'Tagihan Jatuh Tempo', message: 'Toko Jaya Abadi Rp 12jt', time: '3 jam lalu', read: true, type: 'info' },
   ]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('week');
   const [filterAnchor, setFilterAnchor] = useState(null);
   const [salesData, setSalesData] = useState([
@@ -242,11 +247,6 @@ export function DashboardPremium() {
     window.print();
   };
 
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
-    setDetailModalOpen(true);
-  };
-
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -262,8 +262,9 @@ export function DashboardPremium() {
               Ringkasan operasional harian • {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+              <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
             <Button variant="outlined" size="small" startIcon={<DateRangeIcon />} onClick={(e) => setFilterAnchor(e.currentTarget)} sx={{ borderRadius: '12px', textTransform: 'none' }}>
+
               {dateFilter === 'week' ? 'Minggu Ini' : 'Bulan Ini'}
             </Button>
             <Menu anchorEl={filterAnchor} open={Boolean(filterAnchor)} onClose={() => setFilterAnchor(null)}>
@@ -318,7 +319,7 @@ export function DashboardPremium() {
                         <Table size="small">
                           <TableBody>
                             {topProducts.map((prod, i) => (
-                              <TableRow key={i} hover sx={{ cursor: 'pointer' }} onClick={() => handleProductClick(prod)}>
+                              <TableRow key={i} hover sx={{ cursor: 'pointer' }}>
                                 <TableCell sx={{ fontWeight: 600, py: 1.5 }}>{prod.nama}</TableCell>
                                 <TableCell align="right" sx={{ py: 1.5 }}>{prod.terjual}</TableCell>
                                 <TableCell sx={{ width: '30%', py: 1.5 }}>
@@ -593,9 +594,12 @@ export function DashboardPremium() {
   );
 }
 
+// ============================================================
 // ====== SIDEBAR ADMIN ======
+// ============================================================
 const Sidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const menuItems = [
     {
@@ -646,6 +650,7 @@ const Sidebar = () => {
       children: [
         { id: 'data-karyawan', title: 'Data Karyawan', type: 'item', url: '/admin/data-karyawan' },
         { id: 'pelanggan', title: 'Data Pelanggan', type: 'item', url: '/admin/pelanggan' },
+        { id: 'user-management', title: 'User Management', type: 'item', url: '/admin/user-management' },
       ],
     },
     {
@@ -695,7 +700,7 @@ const Sidebar = () => {
           </React.Fragment>
         );
       } else if (item.type === 'item') {
-        const isActive = window.location.pathname === item.url;
+        const isActive = location.pathname === item.url;
         return (
           <ListItem
             button
@@ -752,46 +757,136 @@ const Sidebar = () => {
   );
 };
 
+// ============================================================
 // ====== ADMIN LAYOUT ======
+// ============================================================
 const AdminLayout = () => {
+  console.log('✅ AdminLayout rendered');
   return (
-    <ErrorBoundary fallback={<div style={{ padding: 16 }}>Error load halaman</div>}>
-<Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#ffffff' }}>
-        <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#1976d2', color: '#fff', borderBottom: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography sx={{ fontWeight: 700, fontSize: 20, letterSpacing: 1 }}>Materiality</Typography>
-              <Chip label="Live" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700, '& .MuiChip-icon': { color: '#fff' } }} icon={<FiberManualRecordIcon sx={{ fontSize: 10, animation: 'pulse 1.5s infinite' }} />} />
-            </Stack>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
-              <ProfileMenu />
-            </Stack>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex' }}>
-          <Sidebar />
-          <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 3 }}><Outlet /></Box>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#ffffff' }}>
+      <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#1976d2', color: '#fff', borderBottom: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography sx={{ fontWeight: 700, fontSize: 20, letterSpacing: 1 }}>Materiality</Typography>
+            <Chip label="Live" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700, '& .MuiChip-icon': { color: '#fff' } }} icon={<FiberManualRecordIcon sx={{ fontSize: 10, animation: 'pulse 1.5s infinite' }} />} />
+          </Stack>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
+            <ProfileMenu />
+          </Stack>
         </Box>
       </Box>
-    </ErrorBoundary>
+      <Box sx={{ display: 'flex' }}>
+        <Sidebar />
+        <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 3 }}><Outlet /></Box>
+      </Box>
+    </Box>
   );
 };
 
-// ====== ROUTES UTAMA (GABUNGAN ADMIN + KARYAWAN) ======
+// ============================================================
+// ====== KARYAWAN LAYOUT ======
+// ============================================================
+const KaryawanLayout = () => {
+  console.log('✅ KaryawanLayout rendered');
+  return (
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#2e7d32', color: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 20 }}>Materiality - Karyawan</Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
+            <ProfileMenu />
+          </Stack>
+        </Box>
+      </Box>
+      <Box sx={{ display: 'flex' }}>
+        <Box sx={{ width: 240, bgcolor: '#ffffff', p: 2, borderRight: '1px solid #e0e0e0', minHeight: 'calc(100vh - 64px)' }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>Menu Karyawan</Typography>
+          <List>
+            <ListItem button onClick={() => window.location.href = '/karyawan/dashboard'}>
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+            <ListItem button onClick={() => window.location.href = '/karyawan/kasir'}>
+              <ListItemText primary="Kasir" />
+            </ListItem>
+            <ListItem button onClick={() => window.location.href = '/karyawan/pengiriman'}>
+              <ListItemText primary="Pengiriman" />
+            </ListItem>
+          </List>
+        </Box>
+        <Box sx={{ flex: 1, p: 3 }}>
+          <Outlet />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+// ============================================================
+// ====== GUEST LAYOUT & DASHBOARD ======
+// ============================================================
+const GuestLayout = () => {
+  console.log('✅ GuestLayout rendered');
+  return (
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#fafafa' }}>
+      <Box component="header" sx={{ bgcolor: '#9c27b0', color: '#fff', p: 2 }}>
+        <Typography variant="h5">Materiality - Guest Mode</Typography>
+      </Box>
+      <Box sx={{ p: 3 }}>
+        <Outlet />
+      </Box>
+    </Box>
+  );
+};
+
+
+
+// ============================================================
+// ====== AUTHENTICATION HELPERS ======
+// ============================================================
+const isAuthenticated = () => {
+  const token = localStorage.getItem('token'); // sesuaikan dengan key yang Anda gunakan
+  return !!token;
+};
+
+const PrivateRoute = ({ children }) => {
+  // BYPASS SEMENTARA UNTUK DEVELOPMENT - LANGSUNG TAMPILKAN CHILDREN
+  return children;
+  /*
+  const location = useLocation();
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+  */
+};
+
+const PublicRoute = ({ children }) => {
+  if (isAuthenticated()) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  return children;
+};
+
+// ============================================================
+// ====== ROUTES CONFIGURATION ======
+// ============================================================
 const routes = [
+  // RUTE PUBLIK (LOGIN)
   {
     path: '/login',
-    element: <Login />,
+    element: <PublicRoute><Login /></PublicRoute>,
   },
+  // REDIRECT ROOT
   {
     path: '/',
-    element: <Navigate to="/login" replace />,
+    element: isAuthenticated() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/login" replace />,
   },
-  // ===== ROUTE ADMIN =====
+  // ADMIN ROUTES (PRIVATE)
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: <PrivateRoute><AdminLayout /></PrivateRoute>,
     children: [
       { path: 'dashboard', element: <DashboardPremium /> },
       { path: 'inventaris', element: <InventarisToko /> },
@@ -806,24 +901,36 @@ const routes = [
       { path: 'data-karyawan', element: <ManajemenUser /> },
       { path: 'pelanggan', element: <Pelanggan /> },
       { path: 'pengaturan-sistem', element: <PengaturanSistem /> },
+      { path: 'user-management', element: <UserManagement /> },
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
     ],
   },
-  // ===== ROUTE KARYAWAN =====
+  // KARYAWAN ROUTES (PRIVATE)
   {
     path: '/karyawan',
-    element: <KaryawanLayout />,
+    element: <PrivateRoute><KaryawanLayout /></PrivateRoute>,
     children: [
-      { index: true, element: <Navigate to="/karyawan/kasir" replace /> },
       { path: 'dashboard', element: <DashboardKaryawan /> },
       { path: 'kasir', element: <KasirKaryawan /> },
       { path: 'pengiriman', element: <PengirimanKaryawan /> },
       { path: 'laporan-barang', element: <LaporanBarangKaryawan /> },
       { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawan /> },
-      { path: 'manajemen', element: <ManajemenKaryawan /> },
-      { path: '*', element: <Navigate to="/karyawan" replace /> },
+      { path: 'laporan-laba-rugi', element: <LaporanLabaRugiKaryawan /> },
+      { path: 'retur-barang', element: <ReturBarangKaryawan /> },
+      { path: 'manajemen-karyawan', element: <ManajemenKaryawan /> },
+      { path: 'manajemen-piutang', element: <ManajemenPiutangKaryawan /> },
+      { index: true, element: <Navigate to="/karyawan/dashboard" replace /> },
+    ],
+  },
+  // GUEST ROUTES (TANPA PROTEKSI)
+  {
+    path: '/guest',
+    element: <GuestLayout />,
+    children: [
+      { index: true, element: <Navigate to="/guest" replace /> },
     ],
   },
 ];
+
 
 export default routes;

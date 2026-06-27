@@ -111,7 +111,12 @@ import KasirKaryawan from '../views/karyawan/KasirKaryawan.jsx';
 import PengirimanKaryawan from '../views/karyawan/PengirimanKaryawan.jsx';
 import LaporanBarangKaryawan from '../views/karyawan/LaporanBarangKaryawan.jsx';
 import LaporanKeuanganKaryawan from '../views/karyawan/LaporanKeuanganKaryawan.jsx';
+import LaporanLabaRugiKaryawan from '../views/karyawan/LaporanLabaRugiKaryawan.jsx';
+import ReturBarangKaryawan from '../views/karyawan/ReturBarangKaryawan.jsx';
+import ManajemenPiutangKaryawan from '../views/karyawan/ManajemenPiutangKaryawan.jsx';
+// import MonajemenStokKaryawan disesuaikan dengan file yang ada
 import ManajemenKaryawan from '../views/karyawan/ManajemenKaryawan.jsx';
+
 
 // ====== HELPER ======
 const rgba = (color, opacity) => {
@@ -137,9 +142,7 @@ const PagePlaceholder = ({ title }) => (
 // ====== DASHBOARD UTAMA (PREMIUM) - SAMA SEPERTI SEBELUMNYA ======
 export function DashboardPremium() {
   // ... (kode DashboardPremium yang sudah Anda miliki, tidak perlu diubah)
-  // Karena panjang, saya singkat dengan asumsi kode ini sama persis.
   // Untuk keperluan penggabungan, saya sertakan hanya placeholder.
-  // Namun, Anda bisa menyalin kode DashboardPremium dari file Anda.
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h4">Dashboard Premium</Typography>
@@ -363,6 +366,16 @@ const AdminLayout = () => {
   );
 };
 
+// ====== NOT FOUND KARYAWAN ======
+const NotFoundKaryawan = () => (
+  <Box sx={{ p: 4, textAlign: 'center' }}>
+    <Typography variant="h5" gutterBottom>Halaman Tidak Ditemukan</Typography>
+    <Typography variant="body1" color="text.secondary">
+      Maaf, halaman yang Anda tuju tidak tersedia untuk karyawan.
+    </Typography>
+  </Box>
+);
+
 // ====== ROUTES UTAMA (GABUNGAN ADMIN + KARYAWAN) ======
 const routes = [
   {
@@ -399,16 +412,28 @@ const routes = [
     path: '/karyawan',
     element: <KaryawanLayout />,
     children: [
-      // Redirect default ke kasir
-      { index: true, element: <Navigate to="/karyawan/kasir" replace /> },
+      // Redirect default ke dashboard atau kasir (saya pilih dashboard)
+      { index: true, element: <Navigate to="/karyawan/dashboard" replace /> },
+      // Menu navigasi karyawan sesuai sidebar
       { path: 'dashboard', element: <DashboardKaryawan /> },
       { path: 'kasir', element: <KasirKaryawan /> },
       { path: 'pengiriman', element: <PengirimanKaryawan /> },
-      { path: 'laporan-barang', element: <LaporanBarangKaryawan /> },
-      { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawan /> },
+      // path sesuai menu: /karyawan/manajemen
       { path: 'manajemen', element: <ManajemenKaryawan /> },
-      // Fallback: semua path yang tidak dikenal redirect ke /karyawan
-      { path: '*', element: <Navigate to="/karyawan" replace /> },
+      // (opsional) alias jika diperlukan
+      { path: 'manajemen-stock', element: <ManajemenKaryawan /> },
+
+
+
+      { path: 'laporan-laba-rugi', element: <LaporanLabaRugiKaryawan /> },
+      { path: 'laporan-barang', element: <LaporanBarangKaryawan /> },
+      { path: 'retur-barang', element: <ReturBarangKaryawan /> },
+      { path: 'monajemen-piutang', element: <ManajemenPiutangKaryawan /> },
+
+      // Halaman tambahan (jika ada)
+      { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawan /> },
+      // Fallback: jika url tidak cocok, tampilkan NotFound
+      { path: '*', element: <NotFoundKaryawan /> },
     ],
   },
 ];

@@ -1,7 +1,10 @@
 html, body, #root {
-  background: #ffffff !important;
-  color: #0f172a !important;
+  /* force warna dasar yang aman agar tidak “putih kosong” */
+  background: #f8fafc;
+  color: #0f172a;
 }
+
+
 
 /* simpebar styles */
 @import 'simplebar-react/dist/simplebar.min.css';

@@ -19,7 +19,17 @@ import logo from 'assets/images/logo.svg';
 import MenuTwoToneIcon from '@mui/icons-material/MenuTwoTone';
 
 // AppBar props, including styles that vary based on drawer state and screen size
-const appBar = { color: 'primary', position: 'fixed', sx: { width: 1, zIndex: { xs: 1100, lg: 1201 } } };
+const appBar = {
+  color: 'primary',
+  position: 'fixed',
+  sx: {
+    width: 1,
+    zIndex: { xs: 1100, lg: 1201 },
+    // beda warna khusus untuk header panel karyawan (berdasarkan route)
+    backgroundColor: (theme) =>
+      window?.location?.pathname?.startsWith('/karyawan') ? theme.palette.secondary.main : undefined,
+  },
+};
 
 // ==============================|| MAIN LAYOUT - HEADER ||============================== //
 

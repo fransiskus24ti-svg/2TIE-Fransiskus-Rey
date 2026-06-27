@@ -1,24 +1,27 @@
-﻿import { Outlet, useLocation } from 'react-router-dom';
+﻿import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import FooterPelanggan from './FooterPelanggan';
+import NavbarPelanggan from './NavbarPelanggan';
 
-import { Box } from '@mui/material';
 
-import NavbarGuest from './NavbarGuest';
-import GuestHero from './GuestHero';
-import FooterGuest from './FooterGuest';
-
-// guest layout: tanpa drawer/menu admin, hanya navbar + hero + outlet + footer
-export default function GuestLayout() {
-  const location = useLocation();
-  const showHero = location.pathname === '/guest';
+const GuestLayout = () => {
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <NavbarGuest />
-      {showHero && <GuestHero />}
-      <Box component="main" sx={{ py: showHero ? 4 : 6 }}>
+    <>
+      <NavbarPelanggan />
+
+      <main style={{ minHeight: '80vh' }}>
         <Outlet />
-      </Box>
-      <FooterGuest />
-    </Box>
+      </main>
+
+      {/* Footer khusus pelanggan */}
+      <FooterPelanggan />
+
+      {/* Footer umum guest (ungu) */}
+      {/* <FooterGuest /> */}
+    </>
   );
-}
+
+};
+
+export default GuestLayout;

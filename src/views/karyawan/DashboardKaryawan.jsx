@@ -21,6 +21,11 @@ import {
   Skeleton,
   Tooltip,
   Badge,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Collapse,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -41,6 +46,11 @@ import {
   AttachMoney as MoneyIcon,
   Assignment as AssignmentIcon,
   Close as CloseIcon,
+  NotificationsActive as NotifIcon,
+  Task as TaskIcon,
+  WarningAmber as WarningAmberIcon,
+  DoneAll as DoneAllIcon,
+  HourglassTop as HourglassIcon,
 } from '@mui/icons-material';
 
 // --- Context (untuk data global) ---
@@ -128,12 +138,41 @@ const StatBadge = styled(Box)(({ theme, color }) => ({
   fontWeight: 700,
 }));
 
+const AlertItem = styled(Box)(({ theme, severity }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '10px 14px',
+  borderRadius: '12px',
+  backgroundColor: alpha(
+    severity === 'critical' ? '#ef4444' :
+    severity === 'warning' ? '#f59e0b' : '#3b82f6',
+    0.06
+  ),
+  border: `1px solid ${alpha(
+    severity === 'critical' ? '#ef4444' :
+    severity === 'warning' ? '#f59e0b' : '#3b82f6',
+    0.12
+  )}`,
+  marginBottom: '8px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: alpha(
+      severity === 'critical' ? '#ef4444' :
+      severity === 'warning' ? '#f59e0b' : '#3b82f6',
+      0.10
+    ),
+  },
+}));
+
 // --- Main Component ---
 export default function DashboardKaryawan() {
   const theme = useTheme();
   const { dataBarang, riwayatTransaksi, catatanOperasional } = useContext(TokoContext);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [showTasks, setShowTasks] = useState(true);
+  const [showAlerts, setShowAlerts] = useState(true);
 
   // Data dummy (sebagian bisa diambil dari context, misal riwayat transaksi)
   const totalTransaksi = useMemo(() => riwayatTransaksi?.length || 142, [riwayatTransaksi]);
@@ -146,22 +185,50 @@ export default function DashboardKaryawan() {
   const uangAwal = 'Rp 2,000,000';
   const uangFisik = 'Rp 44,850,000';
 
-  // Stok dari context
+  // --- Stok dari context dengan alert low stock ---
   const stokData = useMemo(() => {
     if (dataBarang && dataBarang.length > 0) {
       return dataBarang.map(item => ({
         name: item.nama,
         masuk: item.stok || 0,
         keluar: Math.floor(item.stok * 0.3), // dummy keluar
+        minimal: item.minimal || 10,
+        unit: item.satuan || 'pcs',
       }));
     }
     return [
-      { name: 'Semen Tiga Roda 50kg', masuk: 5000, keluar: 3000 },
-      { name: 'Besi 10mm (12m)', masuk: 2000, keluar: 1000 },
-      { name: 'Pipa PVC 4" Rucika', masuk: 1000, keluar: 200 },
-      { name: 'Cat Tembok Dulux 5kg', masuk: 800, keluar: 400 },
+      { name: 'Semen Tiga Roda 50kg', masuk: 5000, keluar: 3000, minimal: 100, unit: 'sak' },
+      { name: 'Besi 10mm (12m)', masuk: 2000, keluar: 1000, minimal: 50, unit: 'batang' },
+      { name: 'Pipa PVC 4" Rucika', masuk: 1000, keluar: 200, minimal: 30, unit: 'batang' },
+      { name: 'Cat Tembok Dulux 5kg', masuk: 800, keluar: 400, minimal: 20, unit: 'pcs' },
+      { name: 'Paku Beton 5cm', masuk: 120, keluar: 90, minimal: 50, unit: 'kg' },
+      { name: 'Keramik 40x40', masuk: 60, keluar: 45, minimal: 20, unit: 'box' },
     ];
   }, [dataBarang]);
+
+  // --- Low Stock Alert ---
+  const lowStockItems = useMemo(() => {
+    return stokData
+      .filter(item => item.masuk < item.minimal)
+      .map(item => ({
+        ...item,
+        severity: item.masuk === 0 ? 'critical' : 'warning',
+        percentage: Math.round((item.masuk / item.minimal) * 100),
+      }))
+      .sort((a, b) => a.percentage - b.percentage);
+  }, [stokData]);
+
+  // --- Tugas Harian (dummy) ---
+  const tugasHarian = [
+    { id: 1, task: 'Update stok barang masuk hari ini', priority: 'high', status: 'pending' },
+    { id: 2, task: 'Verifikasi pembayaran pelanggan', priority: 'medium', status: 'pending' },
+    { id: 3, task: 'Koordinasi dengan tim pengiriman', priority: 'high', status: 'in-progress' },
+    { id: 4, task: 'Rekap penjualan harian', priority: 'medium', status: 'done' },
+    { id: 5, task: 'Cek kondisi barang di gudang', priority: 'low', status: 'pending' },
+  ];
+
+  const pendingTasks = tugasHarian.filter(t => t.status !== 'done');
+  const completedTasks = tugasHarian.filter(t => t.status === 'done');
 
   // Daftar pengiriman & piutang (dummy)
   const daftarPengiriman = [
@@ -184,6 +251,25 @@ export default function DashboardKaryawan() {
       setLoading(false);
       setSnackbar({ open: true, message: 'Dashboard berhasil diperbarui', severity: 'success' });
     }, 600);
+  };
+
+  // Get priority color
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case 'high': return '#ef4444';
+      case 'medium': return '#f59e0b';
+      case 'low': return '#3b82f6';
+      default: return '#64748b';
+    }
+  };
+
+  // Get status icon
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'done': return <DoneAllIcon sx={{ fontSize: '1rem', color: '#10b981' }} />;
+      case 'in-progress': return <HourglassIcon sx={{ fontSize: '1rem', color: '#f59e0b' }} />;
+      default: return <ScheduleIcon sx={{ fontSize: '1rem', color: '#94a3b8' }} />;
+    }
   };
 
   return (
@@ -223,7 +309,7 @@ export default function DashboardKaryawan() {
                     Dashboard Karyawan
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
-                    Ringkasan performa toko hari ini
+                    Ringkasan performa & tugas harian
                   </Typography>
                 </Box>
               </Stack>
@@ -403,6 +489,98 @@ export default function DashboardKaryawan() {
                     </Grid>
                   </GlassCard>
 
+                  {/* LOW STOCK ALERT - FITUR BARU */}
+                  <GlassCard sx={{ p: 2.5 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                        ⚠️ Low Stock Alert
+                      </Typography>
+                      <Chip
+                        label={`${lowStockItems.length} item kritis`}
+                        size="small"
+                        icon={<WarningAmberIcon sx={{ fontSize: '0.8rem' }} />}
+                        sx={{
+                          fontWeight: 600,
+                          bgcolor: lowStockItems.length > 0 ? alpha('#ef4444', 0.1) : alpha('#10b981', 0.1),
+                          color: lowStockItems.length > 0 ? '#ef4444' : '#10b981',
+                        }}
+                      />
+                    </Stack>
+
+                    {lowStockItems.length === 0 ? (
+                      <Box
+                        sx={{
+                          py: 4,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          color: '#10b981',
+                        }}
+                      >
+                        <CheckCircleIcon sx={{ fontSize: 48, opacity: 0.5 }} />
+                        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                          Semua stok dalam kondisi aman ✅
+                        </Typography>
+                      </Box>
+                    ) : (
+                      lowStockItems.slice(0, 5).map((item, idx) => (
+                        <AlertItem key={idx} severity={item.severity}>
+                          <Box sx={{ flexShrink: 0 }}>
+                            <WarningAmberIcon
+                              sx={{
+                                color: item.severity === 'critical' ? '#ef4444' : '#f59e0b',
+                                fontSize: '1.4rem',
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+                              {item.name}
+                            </Typography>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Stok: <strong>{item.masuk}</strong> {item.unit}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Minimal: {item.minimal} {item.unit}
+                              </Typography>
+                              <Box sx={{ flex: 1, maxWidth: 80 }}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={Math.min(item.percentage, 100)}
+                                  sx={{
+                                    height: 4,
+                                    borderRadius: 2,
+                                    backgroundColor: alpha('#64748b', 0.15),
+                                    '& .MuiLinearProgress-bar': {
+                                      backgroundColor: item.severity === 'critical' ? '#ef4444' : '#f59e0b',
+                                    },
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          </Box>
+                          <Chip
+                            label={item.severity === 'critical' ? 'Kritis' : 'Menipis'}
+                            size="small"
+                            sx={{
+                              bgcolor: item.severity === 'critical' ? alpha('#ef4444', 0.1) : alpha('#f59e0b', 0.1),
+                              color: item.severity === 'critical' ? '#ef4444' : '#f59e0b',
+                              fontWeight: 600,
+                            }}
+                          />
+                        </AlertItem>
+                      ))
+                    )}
+                    {lowStockItems.length > 5 && (
+                      <Box sx={{ mt: 1, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          + {lowStockItems.length - 5} item lainnya
+                        </Typography>
+                      </Box>
+                    )}
+                  </GlassCard>
+
                   {/* Stok Kirim */}
                   <GlassCard sx={{ p: 2.5 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -487,6 +665,128 @@ export default function DashboardKaryawan() {
               {/* KANAN */}
               <Grid item xs={12} lg={5}>
                 <Stack spacing={3}>
+                  {/* RINGKASAN TUGAS HARIAN - FITUR BARU */}
+                  <GlassCard sx={{ p: 2.5 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                        📋 Ringkasan Tugas Harian
+                      </Typography>
+                      <Chip
+                        label={`${pendingTasks.length} pending`}
+                        size="small"
+                        icon={<TaskIcon sx={{ fontSize: '0.8rem' }} />}
+                        sx={{ fontWeight: 600, bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b' }}
+                      />
+                    </Stack>
+
+                    {loading ? (
+                      <Stack spacing={1}>
+                        <Skeleton variant="rectangular" height={40} />
+                        <Skeleton variant="rectangular" height={40} />
+                        <Skeleton variant="rectangular" height={40} />
+                      </Stack>
+                    ) : (
+                      <>
+                        {tugasHarian.map((task) => (
+                          <Paper
+                            key={task.id}
+                            elevation={0}
+                            sx={{
+                              p: 2,
+                              borderRadius: '12px',
+                              border: `1px solid ${alpha(
+                                task.status === 'done' ? '#10b981' :
+                                task.status === 'in-progress' ? '#f59e0b' : '#e2e8f0',
+                                0.15
+                              )}`,
+                              backgroundColor: alpha(
+                                task.status === 'done' ? '#10b981' :
+                                task.status === 'in-progress' ? '#f59e0b' : '#ffffff',
+                                0.04
+                              ),
+                              mb: 1.5,
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'translateX(4px)',
+                                borderColor: alpha(
+                                  task.status === 'done' ? '#10b981' :
+                                  task.status === 'in-progress' ? '#f59e0b' : '#94a3b8',
+                                  0.3
+                                ),
+                              },
+                            }}
+                          >
+                            <Stack direction="row" alignItems="center" spacing={1.5}>
+                              <Box sx={{ flexShrink: 0 }}>
+                                {getStatusIcon(task.status)}
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: '#0f172a',
+                                    textDecoration: task.status === 'done' ? 'line-through' : 'none',
+                                    opacity: task.status === 'done' ? 0.6 : 1,
+                                  }}
+                                >
+                                  {task.task}
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+                                  <Chip
+                                    label={task.priority}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.6rem',
+                                      fontWeight: 700,
+                                      bgcolor: alpha(getPriorityColor(task.priority), 0.1),
+                                      color: getPriorityColor(task.priority),
+                                    }}
+                                  />
+                                  <Chip
+                                    label={task.status === 'done' ? 'Selesai' : task.status === 'in-progress' ? 'Proses' : 'Pending'}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.6rem',
+                                      fontWeight: 700,
+                                      bgcolor: alpha(
+                                        task.status === 'done' ? '#10b981' :
+                                        task.status === 'in-progress' ? '#f59e0b' : '#94a3b8',
+                                        0.1
+                                      ),
+                                      color: task.status === 'done' ? '#10b981' :
+                                             task.status === 'in-progress' ? '#f59e0b' : '#64748b',
+                                    }}
+                                  />
+                                </Stack>
+                              </Box>
+                              {task.status !== 'done' && (
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    bgcolor: alpha('#10b981', 0.08),
+                                    '&:hover': { bgcolor: alpha('#10b981', 0.16) },
+                                  }}
+                                  onClick={() => {
+                                    setSnackbar({
+                                      open: true,
+                                      message: `Tugas "${task.task}" ditandai selesai`,
+                                      severity: 'success'
+                                    });
+                                  }}
+                                >
+                                  <CheckCircleIcon sx={{ fontSize: '1rem', color: '#10b981' }} />
+                                </IconButton>
+                              )}
+                            </Stack>
+                          </Paper>
+                        ))}
+                      </>
+                    )}
+                  </GlassCard>
+
                   {/* Piutang Jatuh Tempo */}
                   <GlassCard sx={{ p: 2.5 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>

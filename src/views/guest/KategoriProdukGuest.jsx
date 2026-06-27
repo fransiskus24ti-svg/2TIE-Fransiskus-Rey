@@ -28,15 +28,25 @@ import {
   Select,
   MenuItem,
   Alert,
-  Divider
+  Divider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloseIcon from '@mui/icons-material/Close';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import { QRCodeCanvas } from 'qrcode.react';
+import {
+  Home as HomeIcon,
+  Roofing as RoofingIcon,
+  Deck as DeckIcon,
+  FormatPaint as FormatPaintIcon,
+  TableRows as TableRowsIcon,
+  Bolt as BoltIcon,
+  WaterDrop as WaterDropIcon,
+  Build as BuildIcon,
+} from '@mui/icons-material';
 
-// Helper gambar
+// ============ Helper gambar ============
 const getProductImage = (keyword, title) => {
   let searchKeyword = keyword;
   if (title.toLowerCase().includes('semen')) searchKeyword = 'cement bag';
@@ -59,7 +69,7 @@ const getProductImage = (keyword, title) => {
   return `https://source.unsplash.com/featured/300x200?${encodeURIComponent(searchKeyword)}&construction`;
 };
 
-// ==================== DATA PRODUK LENGKAP ====================
+// ============ DATA PRODUK LENGKAP ============
 const allProducts = [
   // Bahan Bangunan Utama
   { name: 'Semen Portland', category: 'Bahan Utama', subcategory: 'Semen', unit: 'sak', price: 65000, priceStr: 'Rp65.000', imageKeyword: 'cement' },
@@ -159,7 +169,32 @@ const allProducts = [
   { name: 'Cangkul', category: 'Hardware & Tools', subcategory: 'Tools', unit: 'buah', price: 75000, priceStr: 'Rp75.000', imageKeyword: 'hoe' }
 ];
 
+// ============ KATEGORI DENGAN IKON & WARNA ============
+const categoryIcons = {
+  'Bahan Utama': <HomeIcon fontSize="small" />,
+  'Atap & Plafon': <RoofingIcon fontSize="small" />,
+  'Kayu & Triplek': <DeckIcon fontSize="small" />,
+  'Finishing': <FormatPaintIcon fontSize="small" />,
+  'Lantai & Dinding': <TableRowsIcon fontSize="small" />,
+  'Kelistrikan': <BoltIcon fontSize="small" />,
+  'Perpipaan': <WaterDropIcon fontSize="small" />,
+  'Hardware & Tools': <BuildIcon fontSize="small" />,
+};
+
+const categoryColors = {
+  'Bahan Utama': '#2563eb',
+  'Atap & Plafon': '#d97706',
+  'Kayu & Triplek': '#b45309',
+  'Finishing': '#7c3aed',
+  'Lantai & Dinding': '#059669',
+  'Kelistrikan': '#dc2626',
+  'Perpipaan': '#0891b2',
+  'Hardware & Tools': '#6b7280',
+};
+
 const categories = ['Semua', ...new Set(allProducts.map(p => p.category))];
+
+import GuestPageLayout from '../../layouts/GuestLayout/GuestPageLayout.jsx';
 
 export default function ProdukBangunan() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,97 +232,300 @@ export default function ProdukBangunan() {
   const qrisData = selectedProduct ? `QRIS://${selectedProduct.name}?amount=${totalPrice}&order_id=INV-${Date.now()}` : '';
 
   return (
-    <Box sx={{ minHeight: '100vh', background: `linear-gradient(145deg, ${alpha('#f8fafc', 0.97)} 0%, ${alpha('#f1f5f9', 0.98)} 100%)`, py: { xs: 4, md: 6 }, position: 'relative' }}>
-      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        <Box sx={{ position: 'absolute', top: -200, right: -100, width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle, ${alpha('#2563eb', 0.05)} 0%, transparent 70%)` }} />
-        <Box sx={{ position: 'absolute', bottom: -150, left: -80, width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle, ${alpha('#dc2626', 0.04)} 0%, transparent 70%)` }} />
-      </Box>
+    <GuestPageLayout
+      title="Seluruh Kebutuhan Bangunan"
+      subtitle="Toko Material — cari produk kebutuhan bangunan dan lakukan pembayaran via QRIS."
+    >
+      {/* ===== SEARCH & KATEGORI ===== */}
+      <Fade in timeout={800}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={3}
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 5 }}
+        >
+          <TextField
+            placeholder="Cari produk (misal: semen, pipa, palu)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            size="medium"
+            sx={{
+              flex: 1,
+              maxWidth: { xs: '100%', md: 450 },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 6,
+                bgcolor: 'white',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#94a3b8' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearchTerm('')}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
 
-      <Container maxWidth="xl">
-        <Fade in timeout={600}>
-          <Stack spacing={1.5} sx={{ mb: 5, textAlign: 'center' }}>
-            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 3, color: '#2563eb' }}>Toko Material</Typography>
-            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: -0.02, background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}>Seluruh Kebutuhan Bangunan</Typography>
-          </Stack>
-        </Fade>
-
-        <Fade in timeout={800}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-            <TextField placeholder="Cari produk (misal: semen, pipa, palu)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} variant="outlined" size="medium" sx={{ flex: 1, maxWidth: { xs: '100%', md: 400 }, '& .MuiOutlinedInput-root': { borderRadius: 6, bgcolor: 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' } }} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>, endAdornment: searchTerm && (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearchTerm('')}><CloseIcon fontSize="small" /></IconButton></InputAdornment>) }} />
-            <ToggleButtonGroup value={selectedCategory} exclusive onChange={handleCategoryChange} sx={{ flexWrap: 'wrap', gap: 1, '& .MuiToggleButton-root': { borderRadius: 6, px: 2.5, py: 0.8, border: '1px solid', borderColor: alpha('#94a3b8', 0.2), bgcolor: 'white', fontWeight: 600, textTransform: 'none', '&.Mui-selected': { bgcolor: '#2563eb', color: 'white', borderColor: '#2563eb', '&:hover': { bgcolor: '#1d4ed8' } } } }}> {categories.map(cat => (<ToggleButton key={cat} value={cat}>{cat === 'Semua' ? <CategoryIcon sx={{ fontSize: 18, mr: 0.5 }} /> : null}{cat}</ToggleButton>))} </ToggleButtonGroup>
-          </Stack>
-        </Fade>
-
-        <Typography variant="body2" sx={{ mb: 3, fontWeight: 500, color: 'text.secondary' }}>Menampilkan {filteredProducts.length} produk</Typography>
-
-        {filteredProducts.length === 0 ? (
-          <Paper sx={{ textAlign: 'center', py: 8, borderRadius: 6, bgcolor: alpha('#fff', 0.7) }}><Typography variant="h6">Tidak ada produk yang cocok dengan pencarian "{searchTerm}"</Typography></Paper>
-        ) : (
-          <Grid container spacing={3}>
-            {filteredProducts.map((product, idx) => (
-              <Zoom in timeout={300 + (idx % 12) * 40} style={{ transitionDelay: `${(idx % 12) * 20}ms` }} key={idx}>
-                <Grid item xs={12} sm={6} md={4} lg={3}>
-                  <Card elevation={0} sx={{ height: '100%', borderRadius: 4, bgcolor: 'white', border: '1px solid', borderColor: alpha('#e2e8f0', 0.6), transition: 'all 0.3s cubic-bezier(0.2,0,0,1)', overflow: 'hidden', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 30px -12px rgba(0,0,0,0.15)', borderColor: alpha('#2563eb', 0.3), '& .product-image': { transform: 'scale(1.05)' } } }}>
-                    <CardMedia component="img" className="product-image" image={getProductImage(product.imageKeyword, product.name)} alt={product.name} sx={{ height: 180, objectFit: 'cover', transition: 'transform 0.4s ease', bgcolor: alpha('#e2e8f0', 0.3) }} onError={(e) => { e.target.src = 'https://placehold.co/300x200/e2e8f0/475569?text=' + encodeURIComponent(product.name.substring(0,20)); }} />
-                    <CardContent sx={{ p: 2.5 }}>
-                      <Stack spacing={1.8}>
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, minHeight: 48 }}>{product.name}</Typography>
-                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                            <Chip label={product.category} size="small" sx={{ fontSize: '0.65rem', fontWeight: 600, bgcolor: alpha('#2563eb', 0.1), color: '#2563eb', height: 24 }} />
-                            <Chip label={product.subcategory} size="small" variant="outlined" sx={{ fontSize: '0.65rem', fontWeight: 500, borderColor: alpha('#94a3b8', 0.3), height: 24 }} />
-                          </Stack>
-                        </Box>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Satuan: <strong>{product.unit}</strong></Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 900, color: '#0f172a', mt: 0.5 }}>{product.priceStr}</Typography>
-                        </Box>
-                        <Button variant="contained" fullWidth startIcon={<QrCodeIcon />} onClick={() => handleBuyClick(product)} sx={{ textTransform: 'none', borderRadius: 3, fontWeight: 700, bgcolor: '#2563eb', '&:hover': { bgcolor: '#1d4ed8', transform: 'scale(0.98)' } }}>Bayar Dengan QRIS</Button>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Zoom>
+          <ToggleButtonGroup
+            value={selectedCategory}
+            exclusive
+            onChange={handleCategoryChange}
+            sx={{
+              flexWrap: 'wrap',
+              gap: 1,
+              '& .MuiToggleButton-root': {
+                borderRadius: 6,
+                px: 2.5,
+                py: 0.8,
+                border: '1px solid',
+                borderColor: alpha('#94a3b8', 0.2),
+                bgcolor: 'white',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.8rem',
+                '&.Mui-selected': {
+                  bgcolor: '#2563eb',
+                  color: 'white',
+                  borderColor: '#2563eb',
+                  '&:hover': { bgcolor: '#1d4ed8' },
+                }
+              }
+            }}
+          >
+            {categories.map(cat => (
+              <ToggleButton key={cat} value={cat}>
+                {cat === 'Semua' ? <CategoryIcon sx={{ fontSize: 18, mr: 0.5 }} /> : null}
+                {cat !== 'Semua' && categoryIcons[cat] && (
+                  <Box sx={{ mr: 0.5, display: 'flex' }}>{categoryIcons[cat]}</Box>
+                )}
+                {cat}
+              </ToggleButton>
             ))}
-          </Grid>
-        )}
+          </ToggleButtonGroup>
+        </Stack>
+      </Fade>
 
-        <Dialog open={openQris} onClose={handleCloseQris} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 800, bgcolor: alpha('#2563eb', 0.05) }}>Pembayaran QRIS</DialogTitle>
-          <DialogContent dividers>
-            {selectedProduct && (
-              <Stack spacing={2}>
-                <Typography variant="subtitle1" fontWeight={700}>{selectedProduct.name}</Typography>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Jumlah ({selectedProduct.unit})</InputLabel>
-                  <Select value={quantity} label={`Jumlah (${selectedProduct.unit})`} onChange={(e) => setQuantity(e.target.value)}>
-                    {[1,2,3,4,5,6,7,8,9,10].map(q => (<MenuItem key={q} value={q}>{q} {selectedProduct.unit}</MenuItem>))}
-                  </Select>
-                </FormControl>
-                <Alert severity="info" sx={{ fontSize: '0.9rem' }}>Total: <strong>{formattedTotal}</strong></Alert>
-                <Divider />
-                <Box textAlign="center" sx={{ py: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Scan QRIS berikut menggunakan aplikasi pembayaran (GoPay, OVO, DANA, LinkAja, dll)</Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                    <QRCodeCanvas value={qrisData} size={180} level="H" />
+      <Typography variant="body2" sx={{ mb: 3, fontWeight: 500, color: 'text.secondary' }}>
+        Menampilkan {filteredProducts.length} produk
+      </Typography>
+
+      {/* ===== GRID PRODUK – 4 KOLOM ===== */}
+      {filteredProducts.length === 0 ? (
+        <Paper sx={{ textAlign: 'center', py: 8, borderRadius: 6, bgcolor: alpha('#fff', 0.7) }}>
+          <Typography variant="h6">Tidak ada produk yang cocok dengan pencarian "{searchTerm}"</Typography>
+        </Paper>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredProducts.map((product, idx) => (
+            <Zoom
+              in
+              timeout={300 + (idx % 12) * 40}
+              style={{ transitionDelay: `${(idx % 12) * 20}ms` }}
+              key={idx}
+            >
+              <Grid item xs={6} sm={4} md={3} lg={3}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    borderRadius: 4,
+                    bgcolor: 'white',
+                    border: '1px solid',
+                    borderColor: alpha('#e2e8f0', 0.6),
+                    transition: 'all 0.3s cubic-bezier(0.2,0,0,1)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    '&:hover': {
+                      transform: 'translateY(-6px)',
+                      boxShadow: '0 20px 30px -12px rgba(0,0,0,0.15)',
+                      borderColor: alpha('#2563eb', 0.3),
+                      '& .product-image': { transform: 'scale(1.05)' },
+                    },
+                  }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <CardMedia
+                      component="img"
+                      className="product-image"
+                      image={getProductImage(product.imageKeyword, product.name)}
+                      alt={product.name}
+                      sx={{
+                        height: 160,
+                        objectFit: 'cover',
+                        transition: 'transform 0.4s ease',
+                        bgcolor: alpha('#e2e8f0', 0.3),
+                      }}
+                      onError={(e) => {
+                        e.target.src = 'https://placehold.co/300x200/e2e8f0/475569?text=' + encodeURIComponent(product.name.substring(0,20));
+                      }}
+                    />
+                    <Chip
+                      label={product.category}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 10,
+                        left: 10,
+                        fontWeight: 600,
+                        fontSize: '0.6rem',
+                        bgcolor: alpha(categoryColors[product.category] || '#2563eb', 0.9),
+                        color: 'white',
+                        borderRadius: '12px',
+                        height: 22,
+                      }}
+                    />
                   </Box>
-                  <Typography variant="caption" color="text.secondary">Kode transaksi: INV-{Date.now()}</Typography>
-                </Box>
-              </Stack>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseQris} color="error">Batal</Button>
-            <Button variant="contained" onClick={() => { alert('Simulasi: Pembayaran berhasil! Transaksi akan diproses.'); handleCloseQris(); }} sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}>Konfirmasi Pembayaran</Button>
-          </DialogActions>
-        </Dialog>
 
-        <Fade in timeout={1000}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center" sx={{ mt: 6, pt: 3 }}>
-            <Typography variant="caption" color="text.secondary" textAlign="center">✅ Produk original & bergaransi • 🚚 Pengiriman ke seluruh Indonesia • 💳 Pembayaran via QRIS</Typography>
-          </Stack>
-        </Fade>
-      </Container>
-    </Box>
+                  <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        lineHeight: 1.3,
+                        minHeight: 42,
+                        mb: 0.5,
+                      }}
+                    >
+                      {product.name}
+                    </Typography>
+                    <Chip
+                      label={product.subcategory}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.6rem',
+                        fontWeight: 500,
+                        borderColor: alpha('#94a3b8', 0.3),
+                        height: 20,
+                        mb: 1.5,
+                        alignSelf: 'flex-start',
+                      }}
+                    />
+                    <Box sx={{ mt: 'auto' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                        Satuan: <strong>{product.unit}</strong>
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 900,
+                          color: '#0f172a',
+                          mt: 0.3,
+                          fontSize: '1.15rem',
+                        }}
+                      >
+                        {product.priceStr}
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<QrCodeIcon />}
+                        onClick={() => handleBuyClick(product)}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: 3,
+                          fontWeight: 700,
+                          bgcolor: '#2563eb',
+                          mt: 1.5,
+                          py: 0.8,
+                          fontSize: '0.8rem',
+                          '&:hover': {
+                            bgcolor: '#1d4ed8',
+                            transform: 'scale(0.98)',
+                          },
+                        }}
+                      >
+                        Bayar QRIS
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Zoom>
+          ))}
+        </Grid>
+      )}
+
+      {/* ===== QRIS DIALOG ===== */}
+      <Dialog open={openQris} onClose={handleCloseQris} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, bgcolor: alpha('#2563eb', 0.05) }}>
+          Pembayaran QRIS
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedProduct && (
+            <Stack spacing={2}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {selectedProduct.name}
+              </Typography>
+              <FormControl fullWidth size="small">
+                <InputLabel>Jumlah ({selectedProduct.unit})</InputLabel>
+                <Select
+                  value={quantity}
+                  label={`Jumlah (${selectedProduct.unit})`}
+                  onChange={(e) => setQuantity(e.target.value)}
+                >
+                  {[1,2,3,4,5,6,7,8,9,10].map(q => (
+                    <MenuItem key={q} value={q}>{q} {selectedProduct.unit}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Alert severity="info" sx={{ fontSize: '0.9rem' }}>
+                Total: <strong>{formattedTotal}</strong>
+              </Alert>
+              <Divider />
+              <Box textAlign="center" sx={{ py: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Scan QRIS berikut menggunakan aplikasi pembayaran (GoPay, OVO, DANA, LinkAja, dll)
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                  <QRCodeCanvas value={qrisData} size={180} level="H" />
+                </Box>
+                <Typography variant="caption" color="text.secondary">
+                  Kode transaksi: INV-{Date.now()}
+                </Typography>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseQris} color="error">Batal</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              alert('Simulasi: Pembayaran berhasil! Transaksi akan diproses.');
+              handleCloseQris();
+            }}
+            sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}
+          >
+            Konfirmasi Pembayaran
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Fade in timeout={1000}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          justifyContent="center"
+          sx={{ mt: 6, pt: 3 }}
+        >
+          <Typography variant="caption" color="text.secondary" textAlign="center">
+            ✅ Produk original & bergaransi • 🚚 Pengiriman ke seluruh Indonesia • 💳 Pembayaran via QRIS
+          </Typography>
+        </Stack>
+      </Fade>
+    </GuestPageLayout>
   );
 }

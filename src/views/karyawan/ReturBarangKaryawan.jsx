@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -17,69 +17,65 @@ import {
   TablePagination,
   TextField,
   InputAdornment,
+  Button,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
   Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
-  Category as CategoryIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
+  Pending as PendingIcon,
+  Receipt as ReceiptIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 
-// Data dummy lebih banyak
-const dummyBarang = [
-  { nama: 'Semen Tiga Roda', stok: 50, minimal: 15 },
-  { nama: 'Cat Tembok Dulux 5kg', stok: 12, minimal: 10 },
-  { nama: 'Paku Beton 5cm', stok: 100, minimal: 30 },
-  { nama: 'Besi Beton 10mm', stok: 8, minimal: 20 },
-  { nama: 'Pipa PVC 4 inch', stok: 25, minimal: 10 },
-  { nama: 'Kabel Listrik NYM 2x1.5', stok: 45, minimal: 20 },
-  { nama: 'Saklar Tunggal', stok: 3, minimal: 10 },
-  { nama: 'Stop Kontak', stok: 15, minimal: 8 },
-  { nama: 'Lampu LED 12W', stok: 60, minimal: 25 },
-  { nama: 'Keramik 40x40', stok: 0, minimal: 50 },
-  { nama: 'Genteng Metal', stok: 120, minimal: 60 },
-  { nama: 'Paku Seng 3cm', stok: 200, minimal: 50 },
-  { nama: 'Kayu Kaso 4x6', stok: 30, minimal: 20 },
-  { nama: 'Triplek 9mm', stok: 18, minimal: 15 },
-  { nama: 'Cat Kayu 1kg', stok: 5, minimal: 10 },
+// Data dummy retur barang - HANYA status 'Diproses' atau 'Selesai'
+const dummyRetur = [
+  { id: 1, namaBarang: 'Semen Tiga Roda', jumlah: 5, alasan: 'Rusak', status: 'Diproses', tanggal: '2026-01-15' },
+  { id: 2, namaBarang: 'Cat Tembok Dulux', jumlah: 2, alasan: 'Salah warna', status: 'Selesai', tanggal: '2026-01-16' },
+  { id: 3, namaBarang: 'Paku Beton 5cm', jumlah: 10, alasan: 'Karat', status: 'Selesai', tanggal: '2026-01-17' },
+  { id: 4, namaBarang: 'Besi Beton 10mm', jumlah: 3, alasan: 'Benturan', status: 'Diproses', tanggal: '2026-01-18' },
+  { id: 5, namaBarang: 'Keramik 40x40', jumlah: 4, alasan: 'Pecah', status: 'Selesai', tanggal: '2026-01-19' },
 ];
 
-export default function LaporanBarangKaryawan() {
+export default function ReturBarangKaryawan() {
   const theme = useTheme();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [returData, setReturData] = useState(dummyRetur);
 
-  // Statistik
-  const totalItem = dummyBarang.length;
-  const totalStok = dummyBarang.reduce((acc, cur) => acc + cur.stok, 0);
-  const stokAman = dummyBarang.filter((x) => x.stok >= x.minimal).length;
-  const stokKritis = dummyBarang.filter((x) => x.stok < x.minimal).length;
+  // Statistik (hanya untuk Diproses & Selesai)
+  const totalRetur = returData.length;
+  const totalSelesai = returData.filter((x) => x.status === 'Selesai').length;
+  const totalDiproses = returData.filter((x) => x.status === 'Diproses').length;
 
   // Filter data
   const filteredData = useMemo(() => {
-    let data = dummyBarang;
+    let data = returData;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      data = data.filter((x) => x.nama.toLowerCase().includes(q));
+      data = data.filter((x) => x.namaBarang.toLowerCase().includes(q));
     }
-    if (statusFilter === 'aman') {
-      data = data.filter((x) => x.stok >= x.minimal);
-    } else if (statusFilter === 'kritis') {
-      data = data.filter((x) => x.stok < x.minimal);
+    if (statusFilter !== 'all') {
+      data = data.filter((x) => x.status === statusFilter);
     }
     return data;
-  }, [search, statusFilter]);
+  }, [search, statusFilter, returData]);
 
   // Paginasi
   const paginatedData = useMemo(() => {
@@ -96,6 +92,35 @@ export default function LaporanBarangKaryawan() {
     setStatusFilter('all');
     setPage(0);
   };
+  const handleDelete = (id) => {
+    setReturData(returData.filter((item) => item.id !== id));
+  };
+
+  const handleOpenDialog = () => setOpenDialog(true);
+  const handleCloseDialog = () => setOpenDialog(false);
+
+  const getStatusChip = (status) => {
+    if (status === 'Selesai') {
+      return (
+        <Chip
+          icon={<CheckCircleIcon />}
+          label="Selesai"
+          size="small"
+          sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 700 }}
+        />
+      );
+    } else if (status === 'Diproses') {
+      return (
+        <Chip
+          icon={<PendingIcon />}
+          label="Diproses"
+          size="small"
+          sx={{ bgcolor: '#fff3e0', color: '#ed6c02', fontWeight: 700 }}
+        />
+      );
+    }
+    return <Chip label={status} size="small" />;
+  };
 
   return (
     <Box sx={{ py: 4, bgcolor: '#f4f7fc', minHeight: '100vh' }}>
@@ -107,17 +132,17 @@ export default function LaporanBarangKaryawan() {
             sx={{
               p: 3,
               borderRadius: 3,
-              background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 100%)',
+              background: 'linear-gradient(135deg, #bf360c 0%, #e64a19 100%)',
               color: 'white',
             }}
           >
             <Grid container alignItems="center" justifyContent="space-between">
               <Grid item>
                 <Typography variant="h5" fontWeight={700}>
-                  📦 Laporan Barang
+                  🔄 Retur Barang
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                  Manajemen stok dan ketersediaan barang
+                  Manajemen retur dan pengembalian barang
                 </Typography>
               </Grid>
               <Grid item>
@@ -128,9 +153,9 @@ export default function LaporanBarangKaryawan() {
             </Grid>
           </Paper>
 
-          {/* Kartu Statistik */}
+          {/* Kartu Statistik (3 kartu: Total, Selesai, Diproses) */}
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <Card
                 elevation={2}
                 sx={{
@@ -142,19 +167,19 @@ export default function LaporanBarangKaryawan() {
               >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <CategoryIcon color="primary" />
+                    <ReceiptIcon color="primary" />
                     <Typography variant="subtitle2" color="textSecondary" fontWeight={600}>
-                      Total Item
+                      Total Retur
                     </Typography>
                   </Stack>
                   <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                    {totalItem}
+                    {totalRetur}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <Card
                 elevation={2}
                 sx={{
@@ -168,41 +193,17 @@ export default function LaporanBarangKaryawan() {
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <CheckCircleIcon color="success" />
                     <Typography variant="subtitle2" color="textSecondary" fontWeight={600}>
-                      Stok Aman
+                      Selesai
                     </Typography>
                   </Stack>
                   <Typography variant="h4" fontWeight={800} sx={{ mt: 1, color: 'success.main' }}>
-                    {stokAman}
+                    {totalSelesai}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
-              <Card
-                elevation={2}
-                sx={{
-                  borderRadius: 3,
-                  borderLeft: `4px solid ${theme.palette.error.main}`,
-                  transition: 'transform 0.2s',
-                  '&:hover': { transform: 'translateY(-4px)' },
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <WarningIcon color="error" />
-                    <Typography variant="subtitle2" color="textSecondary" fontWeight={600}>
-                      Stok Kritis
-                    </Typography>
-                  </Stack>
-                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1, color: 'error.main' }}>
-                    {stokKritis}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <Card
                 elevation={2}
                 sx={{
@@ -214,13 +215,13 @@ export default function LaporanBarangKaryawan() {
               >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <TrendingUpIcon sx={{ color: theme.palette.warning.main }} />
+                    <PendingIcon sx={{ color: theme.palette.warning.main }} />
                     <Typography variant="subtitle2" color="textSecondary" fontWeight={600}>
-                      Total Stok
+                      Diproses
                     </Typography>
                   </Stack>
-                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                    {totalStok}
+                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1, color: 'warning.main' }}>
+                    {totalDiproses}
                   </Typography>
                 </CardContent>
               </Card>
@@ -230,11 +231,11 @@ export default function LaporanBarangKaryawan() {
           {/* Filter & Pencarian */}
           <Paper elevation={1} sx={{ p: 2, borderRadius: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={5}>
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Cari nama barang..."
+                  placeholder="Cari barang retur..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
@@ -256,15 +257,21 @@ export default function LaporanBarangKaryawan() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <MenuItem value="all">Semua</MenuItem>
-                    <MenuItem value="aman">Stok Aman</MenuItem>
-                    <MenuItem value="kritis">Stok Kritis</MenuItem>
+                    <MenuItem value="Diproses">Diproses</MenuItem>
+                    <MenuItem value="Selesai">Selesai</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} md={2}>
-                <Typography variant="body2" color="textSecondary" align="center">
-                  Total: {filteredData.length} item
-                </Typography>
+              <Grid item xs={12} md={3}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpenDialog}
+                  sx={{ bgcolor: '#bf360c', '&:hover': { bgcolor: '#e64a19' } }}
+                >
+                  Tambah Retur
+                </Button>
               </Grid>
             </Grid>
           </Paper>
@@ -277,49 +284,43 @@ export default function LaporanBarangKaryawan() {
                   <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>Nama Barang</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>
-                    Stok
+                    Jumlah
                   </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>
-                    Minimal
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>Alasan</TableCell>
+                  <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>Tanggal</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>
                     Status
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#fafafa' }}>
+                    Aksi
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {paginatedData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                       <Typography variant="body2" color="textSecondary">
-                        Tidak ada data yang ditemukan
+                        Tidak ada retur barang ditemukan
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedData.map((row, index) => {
-                    const isKritis = row.stok < row.minimal;
-                    return (
-                      <TableRow key={row.nama} hover>
-                        <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{row.nama}</TableCell>
-                        <TableCell align="right">{row.stok}</TableCell>
-                        <TableCell align="right">{row.minimal}</TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={isKritis ? 'Kritis' : 'Aman'}
-                            size="small"
-                            icon={isKritis ? <WarningIcon /> : <CheckCircleIcon />}
-                            sx={{
-                              bgcolor: isKritis ? '#ffebee' : '#e8f5e9',
-                              color: isKritis ? '#c62828' : '#2e7d32',
-                              fontWeight: 700,
-                            }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                  paginatedData.map((row, index) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>{row.namaBarang}</TableCell>
+                      <TableCell align="right">{row.jumlah}</TableCell>
+                      <TableCell>{row.alasan}</TableCell>
+                      <TableCell>{row.tanggal}</TableCell>
+                      <TableCell align="center">{getStatusChip(row.status)}</TableCell>
+                      <TableCell align="center">
+                        <IconButton size="small" color="error" onClick={() => handleDelete(row.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -335,17 +336,57 @@ export default function LaporanBarangKaryawan() {
             />
           </TableContainer>
 
+          {/* Dialog Tambah Retur */}
+          <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ bgcolor: '#bf360c', color: 'white' }}>
+              Tambah Retur Barang
+            </DialogTitle>
+            <DialogContent sx={{ mt: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Nama Barang" variant="outlined" size="small" />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Jumlah" type="number" variant="outlined" size="small" />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Alasan" variant="outlined" size="small" multiline rows={2} />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Status</InputLabel>
+                    <Select label="Status" defaultValue="Diproses">
+                      <MenuItem value="Diproses">Diproses</MenuItem>
+                      <MenuItem value="Selesai">Selesai</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Tanggal" type="date" variant="outlined" size="small" defaultValue="2026-01-20" />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button onClick={handleCloseDialog} variant="outlined">
+                Batal
+              </Button>
+              <Button onClick={handleCloseDialog} variant="contained" sx={{ bgcolor: '#bf360c' }}>
+                Simpan
+              </Button>
+            </DialogActions>
+          </Dialog>
+
           {/* Catatan Kaki */}
           <Paper
             elevation={0}
             sx={{ p: 2, borderRadius: 3, bgcolor: 'background.paper', textAlign: 'center' }}
           >
             <Typography variant="caption" color="textSecondary">
-              * Data ini hanya simulasi. Silakan hubungkan dengan API stok asli.
+              * Data ini hanya simulasi. Hubungkan dengan API retur barang yang sebenarnya.
             </Typography>
           </Paper>
         </Stack>
       </Container>
     </Box>
   );
-} 
+}
