@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 // ====== MATERIAL UI IMPORTS ======
 import {
@@ -8,7 +8,8 @@ import {
   LinearProgress, Button, IconButton, Paper, useTheme, useMediaQuery,
   Badge, Fade, Grow, Zoom, Snackbar, Alert, Tabs, Tab, List, ListItem,
   ListItemText, Avatar as MuiAvatar, Skeleton,
-  Menu, MenuItem, Collapse, ListItemIcon,
+  Menu, MenuItem, Collapse, ListItemIcon, Divider,
+  alpha, Tooltip, useScrollTrigger,
 } from '@mui/material';
 
 // ====== ICONS ======
@@ -42,6 +43,9 @@ import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import MenuIcon from '@mui/icons-material/Menu';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 // ====== COMPONENTS ======
 import ProfileMenu from '../components/ProfileMenu.jsx';
@@ -60,8 +64,6 @@ import LaporanLabaRugi from '../views/pages/LaporanLabaRugi.jsx';
 import LaporanPenjualan from '../views/pages/LaporanPenjualan.jsx';
 import LaporanInventaris from '../views/pages/LaporanInventaris.jsx';
 import PengaturanSistem from '../views/pages/PengaturanSistem.jsx';
-
-// 👇 IMPORT USER MANAGEMENT
 import UserManagement from '../views/pages/UserManagement.jsx';
 
 // ====== KARYAWAN PAGES ======
@@ -87,7 +89,6 @@ const rgba = (color, opacity) => {
 // ====== DASHBOARD PREMIUM (Admin Dashboard) ======
 // ============================================================
 export function DashboardPremium() {
-
   console.log('✅ DashboardPremium rendered');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -262,9 +263,8 @@ export function DashboardPremium() {
               Ringkasan operasional harian • {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Typography>
           </Box>
-              <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
             <Button variant="outlined" size="small" startIcon={<DateRangeIcon />} onClick={(e) => setFilterAnchor(e.currentTarget)} sx={{ borderRadius: '12px', textTransform: 'none' }}>
-
               {dateFilter === 'week' ? 'Minggu Ini' : 'Bulan Ini'}
             </Button>
             <Menu anchorEl={filterAnchor} open={Boolean(filterAnchor)} onClose={() => setFilterAnchor(null)}>
@@ -600,6 +600,14 @@ export function DashboardPremium() {
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [openCollapses, setOpenCollapses] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const toggleCollapse = (id) => {
+    setOpenCollapses((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const menuItems = [
     {
@@ -664,37 +672,82 @@ const Sidebar = () => {
     },
   ];
 
-  const [openCollapses, setOpenCollapses] = useState({});
-
-  const toggleCollapse = (id) => {
-    setOpenCollapses((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const renderMenu = (items) => {
     return items.map((item) => {
       if (item.type === 'collapse') {
         const isOpen = openCollapses[item.id] || false;
         return (
           <React.Fragment key={item.id}>
-            <ListItem button onClick={() => toggleCollapse(item.id)}>
-              <ListItemIcon>
+            <ListItem
+              button
+              onClick={() => toggleCollapse(item.id)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                '&:hover': {
+                  backgroundColor: alpha('#1976d2', 0.08),
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
                 {item.icon ? <item.icon sx={{ color: '#64748b' }} /> : null}
               </ListItemIcon>
-              <ListItemText primary={item.title} sx={{ color: '#1e293b' }} />
-              {isOpen ? <ExpandLessIcon sx={{ color: '#64748b' }} /> : <ExpandMoreIcon sx={{ color: '#64748b' }} />}
+              <ListItemText
+                primary={item.title}
+                primaryTypographyProps={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  letterSpacing: 0.5,
+                  color: '#475569',
+                }}
+              />
+              {isOpen ? (
+                <ExpandLessIcon sx={{ color: '#64748b' }} />
+              ) : (
+                <ExpandMoreIcon sx={{ color: '#64748b' }} />
+              )}
             </ListItem>
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                {item.children.map((child) => (
-                  <ListItem
-                    button
-                    key={child.id}
-                    sx={{ pl: 4 }}
-                    onClick={() => navigate(child.url)}
-                  >
-                    <ListItemText primary={child.title} sx={{ color: '#475569' }} />
-                  </ListItem>
-                ))}
+                {item.children.map((child) => {
+                  const isActive = location.pathname === child.url;
+                  return (
+                    <ListItem
+                      button
+                      key={child.id}
+                      sx={{
+                        pl: 4,
+                        borderRadius: 2,
+                        mb: 0.3,
+                        backgroundColor: isActive ? alpha('#1976d2', 0.12) : 'transparent',
+                        '&:hover': {
+                          backgroundColor: isActive ? alpha('#1976d2', 0.18) : alpha('#1976d2', 0.06),
+                        },
+                      }}
+                      onClick={() => navigate(child.url)}
+                    >
+                      <ListItemText
+                        primary={child.title}
+                        primaryTypographyProps={{
+                          fontSize: '0.85rem',
+                          fontWeight: isActive ? 600 : 400,
+                          color: isActive ? '#1976d2' : '#475569',
+                        }}
+                      />
+                      {isActive && (
+                        <Box
+                          sx={{
+                            width: 4,
+                            height: 24,
+                            backgroundColor: '#1976d2',
+                            borderRadius: 2,
+                            ml: 1,
+                          }}
+                        />
+                      )}
+                    </ListItem>
+                  );
+                })}
               </List>
             </Collapse>
           </React.Fragment>
@@ -707,19 +760,37 @@ const Sidebar = () => {
             key={item.id}
             onClick={() => navigate(item.url)}
             sx={{
-              bgcolor: isActive ? '#e8f0fe' : 'transparent',
-              '&:hover': { bgcolor: '#f1f5f9' },
+              borderRadius: 2,
+              mb: 0.5,
+              backgroundColor: isActive ? alpha('#1976d2', 0.12) : 'transparent',
+              '&:hover': {
+                backgroundColor: isActive ? alpha('#1976d2', 0.18) : alpha('#1976d2', 0.06),
+              },
             }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               {item.icon ? (
                 <item.icon sx={{ color: isActive ? '#1976d2' : '#64748b' }} />
               ) : null}
             </ListItemIcon>
             <ListItemText
               primary={item.title}
-              sx={{ color: isActive ? '#1976d2' : '#1e293b', fontWeight: isActive ? 600 : 400 }}
+              primaryTypographyProps={{
+                fontSize: '0.9rem',
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? '#1976d2' : '#1e293b',
+              }}
             />
+            {isActive && (
+              <Box
+                sx={{
+                  width: 4,
+                  height: 24,
+                  backgroundColor: '#1976d2',
+                  borderRadius: 2,
+                }}
+              />
+            )}
           </ListItem>
         );
       } else {
@@ -728,10 +799,12 @@ const Sidebar = () => {
     });
   };
 
+  if (isMobile && !sidebarOpen) return null;
+
   return (
     <Box
       sx={{
-        width: 280,
+        width: sidebarOpen ? 280 : 72,
         height: 'calc(100vh - 64px)',
         position: 'sticky',
         top: '64px',
@@ -741,18 +814,51 @@ const Sidebar = () => {
         flexShrink: 0,
         overflowY: 'auto',
         borderRight: '1px solid #e2e8f0',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+        boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
+        transition: 'width 0.2s',
+        '&::-webkit-scrollbar': {
+          width: 4,
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: '#cbd5e1',
+          borderRadius: 4,
+        },
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4, pl: 1 }}>
-        <StorefrontTwoToneIcon sx={{ color: '#1976d2', fontSize: 32 }} />
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1976d2' }}>
-          Materiality
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 4,
+          pl: 1,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <StorefrontTwoToneIcon sx={{ color: '#1976d2', fontSize: 32 }} />
+          {sidebarOpen && (
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1976d2' }}>
+              Materiality
+            </Typography>
+          )}
+        </Box>
+        <IconButton
+          size="small"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          sx={{ color: '#64748b' }}
+        >
+          {sidebarOpen ? <MenuOpenIcon /> : <MenuIcon />}
+        </IconButton>
       </Box>
-      <List component="nav" sx={{ '& .MuiListItem-root': { borderRadius: 2, mb: 0.5 } }}>
+      <List component="nav" sx={{ '& .MuiListItem-root': { borderRadius: 2 } }}>
         {renderMenu(menuItems)}
       </List>
+      <Divider sx={{ my: 2 }} />
+      <Box sx={{ p: 1, bgcolor: alpha('#1976d2', 0.04), borderRadius: 2 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+          v2.0.1 • Premium
+        </Typography>
+      </Box>
     </Box>
   );
 };
@@ -762,104 +868,128 @@ const Sidebar = () => {
 // ============================================================
 const AdminLayout = () => {
   console.log('✅ AdminLayout rendered');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const trigger = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 0,
+  });
+
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#ffffff' }}>
-      <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#1976d2', color: '#fff', borderBottom: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#f8fafc' }}>
+      {/* HEADER PREMIUM */}
+      <Box
+        component="header"
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1200,
+          background: `linear-gradient(135deg, #0a3d6b 0%, #1976d2 50%, #42a5f5 100%)`,
+          color: '#fff',
+          borderBottom: 'none',
+          boxShadow: trigger
+            ? '0 8px 24px rgba(0,0,0,0.15)'
+            : '0 2px 8px rgba(0,0,0,0.1)',
+          transition: 'box-shadow 0.3s',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: { xs: 2, md: 4 },
+            py: 1.5,
+          }}
+        >
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Typography sx={{ fontWeight: 700, fontSize: 20, letterSpacing: 1 }}>Materiality</Typography>
-            <Chip label="Live" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 700, '& .MuiChip-icon': { color: '#fff' } }} icon={<FiberManualRecordIcon sx={{ fontSize: 10, animation: 'pulse 1.5s infinite' }} />} />
+            <StorefrontTwoToneIcon sx={{ fontSize: 28, color: '#fff' }} />
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: 18, md: 22 },
+                letterSpacing: 1.5,
+                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              Materiality
+            </Typography>
+            <Chip
+              label="LIVE"
+              size="small"
+              icon={
+                <FiberManualRecordIcon
+                  sx={{
+                    fontSize: 10,
+                    animation: 'pulse 1.5s infinite',
+                    color: '#4caf50 !important',
+                  }}
+                />
+              }
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                color: '#fff',
+                fontWeight: 700,
+                backdropFilter: 'blur(4px)',
+                '& .MuiChip-icon': { color: '#fff' },
+              }}
+            />
           </Stack>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
+
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Tooltip title="Notifikasi">
+              <IconButton sx={{ color: '#fff' }}>
+                <Badge badgeContent={4} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Toggle Theme (coming soon)">
+              <IconButton sx={{ color: '#fff' }}>
+                <Brightness7Icon />
+              </IconButton>
+            </Tooltip>
             <ProfileMenu />
           </Stack>
         </Box>
       </Box>
+
+      {/* MAIN CONTENT */}
       <Box sx={{ display: 'flex' }}>
         <Sidebar />
-        <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 3 }}><Outlet /></Box>
-      </Box>
-    </Box>
-  );
-};
-
-// ============================================================
-// ====== KARYAWAN LAYOUT ======
-// ============================================================
-const KaryawanLayout = () => {
-  console.log('✅ KaryawanLayout rendered');
-  return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 1200, bgcolor: '#2e7d32', color: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.5 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 20 }}>Materiality - Karyawan</Typography>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton sx={{ color: '#fff' }}><NotificationsIcon /></IconButton>
-            <ProfileMenu />
-          </Stack>
-        </Box>
-      </Box>
-      <Box sx={{ display: 'flex' }}>
-        <Box sx={{ width: 240, bgcolor: '#ffffff', p: 2, borderRight: '1px solid #e0e0e0', minHeight: 'calc(100vh - 64px)' }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>Menu Karyawan</Typography>
-          <List>
-            <ListItem button onClick={() => window.location.href = '/karyawan/dashboard'}>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
-            <ListItem button onClick={() => window.location.href = '/karyawan/kasir'}>
-              <ListItemText primary="Kasir" />
-            </ListItem>
-            <ListItem button onClick={() => window.location.href = '/karyawan/pengiriman'}>
-              <ListItemText primary="Pengiriman" />
-            </ListItem>
-          </List>
-        </Box>
-        <Box sx={{ flex: 1, p: 3 }}>
-          <Outlet />
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            p: { xs: 2, md: 4 },
+            pt: { xs: 2, md: 4 },
+            backgroundColor: '#f8fafc',
+            minHeight: 'calc(100vh - 64px)',
+          }}
+        >
+          <Fade in timeout={400}>
+            <Box>
+              <Outlet />
+            </Box>
+          </Fade>
         </Box>
       </Box>
     </Box>
   );
 };
-
-// ============================================================
-// ====== GUEST LAYOUT & DASHBOARD ======
-// ============================================================
-const GuestLayout = () => {
-  console.log('✅ GuestLayout rendered');
-  return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#fafafa' }}>
-      <Box component="header" sx={{ bgcolor: '#9c27b0', color: '#fff', p: 2 }}>
-        <Typography variant="h5">Materiality - Guest Mode</Typography>
-      </Box>
-      <Box sx={{ p: 3 }}>
-        <Outlet />
-      </Box>
-    </Box>
-  );
-};
-
-
 
 // ============================================================
 // ====== AUTHENTICATION HELPERS ======
 // ============================================================
 const isAuthenticated = () => {
-  const token = localStorage.getItem('token'); // sesuaikan dengan key yang Anda gunakan
+  const token = localStorage.getItem('token');
   return !!token;
 };
 
 const PrivateRoute = ({ children }) => {
   // BYPASS SEMENTARA UNTUK DEVELOPMENT - LANGSUNG TAMPILKAN CHILDREN
   return children;
-  /*
-  const location = useLocation();
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return children;
-  */
 };
 
 const PublicRoute = ({ children }) => {
@@ -873,7 +1003,7 @@ const PublicRoute = ({ children }) => {
 // ====== ROUTES CONFIGURATION ======
 // ============================================================
 const routes = [
-  // RUTE PUBLIK (LOGIN)
+  // RUTE PUBLIK
   {
     path: '/login',
     element: <PublicRoute><Login /></PublicRoute>,
@@ -883,7 +1013,8 @@ const routes = [
     path: '/',
     element: isAuthenticated() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/login" replace />,
   },
-  // ADMIN ROUTES (PRIVATE)
+
+  // ===== ADMIN ROUTES =====
   {
     path: '/admin',
     element: <PrivateRoute><AdminLayout /></PrivateRoute>,
@@ -905,32 +1036,20 @@ const routes = [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
     ],
   },
-  // KARYAWAN ROUTES (PRIVATE)
-  {
-    path: '/karyawan',
-    element: <PrivateRoute><KaryawanLayout /></PrivateRoute>,
-    children: [
-      { path: 'dashboard', element: <DashboardKaryawan /> },
-      { path: 'kasir', element: <KasirKaryawan /> },
-      { path: 'pengiriman', element: <PengirimanKaryawan /> },
-      { path: 'laporan-barang', element: <LaporanBarangKaryawan /> },
-      { path: 'laporan-keuangan', element: <LaporanKeuanganKaryawan /> },
-      { path: 'laporan-laba-rugi', element: <LaporanLabaRugiKaryawan /> },
-      { path: 'retur-barang', element: <ReturBarangKaryawan /> },
-      { path: 'manajemen-karyawan', element: <ManajemenKaryawan /> },
-      { path: 'manajemen-piutang', element: <ManajemenPiutangKaryawan /> },
-      { index: true, element: <Navigate to="/karyawan/dashboard" replace /> },
-    ],
-  },
-  // GUEST ROUTES (TANPA PROTEKSI)
-  {
-    path: '/guest',
-    element: <GuestLayout />,
-    children: [
-      { index: true, element: <Navigate to="/guest" replace /> },
-    ],
-  },
-];
 
+  // ===== KARYAWAN ROUTES (flat) =====
+  { path: '/karyawan/dashboard', element: <PrivateRoute><DashboardKaryawan /></PrivateRoute> },
+  { path: '/karyawan/kasir', element: <PrivateRoute><KasirKaryawan /></PrivateRoute> },
+  { path: '/karyawan/pengiriman', element: <PrivateRoute><PengirimanKaryawan /></PrivateRoute> },
+  { path: '/karyawan/laporan-barang', element: <PrivateRoute><LaporanBarangKaryawan /></PrivateRoute> },
+  { path: '/karyawan/laporan-keuangan', element: <PrivateRoute><LaporanKeuanganKaryawan /></PrivateRoute> },
+  { path: '/karyawan/laporan-laba-rugi', element: <PrivateRoute><LaporanLabaRugiKaryawan /></PrivateRoute> },
+  { path: '/karyawan/retur-barang', element: <PrivateRoute><ReturBarangKaryawan /></PrivateRoute> },
+  { path: '/karyawan/manajemen-karyawan', element: <PrivateRoute><ManajemenKaryawan /></PrivateRoute> },
+  { path: '/karyawan/manajemen-piutang', element: <PrivateRoute><ManajemenPiutangKaryawan /></PrivateRoute> },
+
+  // ===== GUEST =====
+  { path: '/guest', element: <div style={{ padding: 20 }}>Halaman Guest</div> },
+];
 
 export default routes;
